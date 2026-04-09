@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QuickBite — Delivery Optimization Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- ============================================================
+       GLOBAL STYLES
+       Sets up the overall page look: colors, fonts, layout grid
+  ============================================================ -->
+  <style>
+    /* Reset & base */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      /* Gradient background — dark purple to deep blue */
+      background: linear-gradient(135deg, #1a0533 0%, #0d1b4b 50%, #0a2640 100%);
+      min-height: 100vh;
+      color: #f0f0f0;
+      padding: 24px 16px;
+    }
+
+    /* Top header bar */
+    .header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    .header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      background: linear-gradient(90deg, #ff6b6b, #ffd93d, #6bcb77);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -0.5px;
+    }
+    .header p {
+      color: #a0aec0;
+      font-size: 0.9rem;
+      margin-top: 4px;
+    }
+
+    /* Two-column layout for desktop; stacks on mobile */
+    .dashboard {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    /* Each panel / card */
+    .panel {
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 20px;
+      padding: 24px;
+      backdrop-filter: blur(12px);
+    }
+
+    /* Panel title row */
+    .panel-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .panel-title .icon {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    .icon-orange { background: linear-gradient(135deg, #ff6b35, #f7931e); }
+    .icon-purple { background: linear-gradient(135deg, #7b2ff7, #f107a3); }
+
+    .panel-title h2 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: #fff;
+    }
+    .panel-title span.badge {
+      font-size: 0.7rem;
+      background: rgba(255,255,255,0.15);
+      color: #ccc;
+      padding: 2px 8px;
+      border-radius: 20px;
+    }
+
+    /* Dropdown selector */
+    select {
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+      font-size: 0.9rem;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      margin-bottom: 16px;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23ccc' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      padding-right: 36px;
+    }
+    select option { background: #1a1a2e; color: #fff; }
+
+    /* Each outlet card */
+    .outlet-card {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 14px;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+      transition: border-color 0.3s, background 0.3s;
+      position: relative;
+    }
+    /* Highlighted card for the optimal outlet */
+    .outlet-card.optimal {
+      border-color: #6bcb77;
+      background: rgba(107, 203, 119, 0.08);
+    }
+
+    .outlet-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .outlet-name {
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: #fff;
+    }
+    .optimal-badge {
+      display: none; /* Hidden by default; shown only on optimal */
+      font-size: 0.65rem;
+      background: #6bcb77;
+      color: #0a2e10;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 20px;
+      letter-spacing: 0.5px;
+    }
+    .outlet-card.optimal .optimal-badge { display: inline-block; }
+
+    /* 3 stats in a row inside each outlet card */
+    .outlet-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .stat-box {
+      background: rgba(255,255,255,0.06);
+      border-radius: 8px;
+      padding: 8px 6px;
+      text-align: center;
+    }
+    .stat-box .label {
+      font-size: 0.62rem;
+      color: #a0aec0;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .stat-box .value {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #fff;
+      margin-top: 2px;
+    }
+
+    /* Load bar (shows kitchen load visually) */
+    .load-bar-wrap {
+      height: 5px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 99px;
+      overflow: hidden;
+      margin-top: 6px;
+    }
+    .load-bar {
+      height: 100%;
+      border-radius: 99px;
+      transition: width 0.5s ease;
+    }
+
+    /* Fulfillment time at bottom of each outlet card */
+    .fulfillment {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 8px;
+    }
+    .fulfillment .fkey { font-size: 0.72rem; color: #a0aec0; }
+    .fulfillment .fval { font-size: 0.85rem; font-weight: 600; color: #ffd93d; }
+
+    /* Explanation box below the outlet cards */
+    .why-box {
+      background: rgba(107, 203, 119, 0.1);
+      border: 1px solid rgba(107, 203, 119, 0.3);
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 0.82rem;
+      color: #b8f5be;
+      line-height: 1.5;
+      margin-bottom: 14px;
+    }
+
+    /* Action button */
+    .btn {
+      width: 100%;
+      padding: 12px;
+      border-radius: 12px;
+      border: none;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.15s, opacity 0.15s;
+    }
+    .btn:active { transform: scale(0.97); opacity: 0.85; }
+    .btn-orange {
+      background: linear-gradient(135deg, #ff6b35, #f7931e);
+      color: #fff;
+    }
+    .btn-purple {
+      background: linear-gradient(135deg, #7b2ff7, #f107a3);
+      color: #fff;
+    }
+    .btn + .btn { margin-top: 8px; }
+
+    /* ============================================================
+       FEATURE 2: AUTOMATIC DELIVERY TRACKER STYLES
+    ============================================================ */
+
+    /* Partner profile row */
+    .partner-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    .avatar {
+      width: 52px; height: 52px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #7b2ff7, #f107a3);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 1.3rem; color: #fff;
+      flex-shrink: 0;
+    }
+    .partner-info h3 { font-size: 1rem; font-weight: 600; color: #fff; }
+    .partner-info p  { font-size: 0.78rem; color: #a0aec0; margin-top: 2px; }
+
+    /* Active delivery card — the main timer block */
+    .delivery-card {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+    .delivery-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+    .delivery-num {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #a0aec0;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+    .delivery-expected {
+      font-size: 0.75rem;
+      color: #718096;
+    }
+    .delivery-expected span {
+      color: #ffd93d;
+      font-weight: 600;
+    }
+
+    /* Big countdown clock */
+    .timer-display {
+      font-size: 3.2rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: #fff;
+      line-height: 1;
+      margin: 8px 0 4px;
+      font-variant-numeric: tabular-nums; /* prevents layout shift as digits change */
+      transition: color 0.4s;
+    }
+    .timer-display.urgent { color: #ff6b6b; } /* goes red when <3 min left */
+    .timer-display.done   { color: #a0aec0; }
+
+    .timer-label {
+      font-size: 0.7rem;
+      color: #718096;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 14px;
+    }
+
+    /* Thin animated bar showing time consumed */
+    .timer-track {
+      height: 6px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 99px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+    .timer-bar {
+      height: 100%;
+      border-radius: 99px;
+      background: linear-gradient(90deg, #7b2ff7, #f107a3);
+      transition: width 1s linear, background 0.4s;
+    }
+    .timer-bar.urgent { background: linear-gradient(90deg, #ff6b35, #ff6b6b); }
+
+    /* Points summary strip */
+    .points-strip {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(255,255,255,0.05);
+      border-radius: 12px;
+      padding: 12px 16px;
+      margin-bottom: 16px;
+    }
+    .pts-left .pts-label { font-size: 0.68rem; color: #a0aec0; text-transform: uppercase; letter-spacing: 0.8px; }
+    .pts-left .pts-value {
+      font-size: 1.8rem;
+      font-weight: 700;
+      background: linear-gradient(90deg, #ffd93d, #f7931e);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.1;
+    }
+    .pts-right { text-align: right; }
+    .pts-right .pts-label { font-size: 0.68rem; color: #a0aec0; text-transform: uppercase; letter-spacing: 0.8px; }
+    .pts-right .pts-count { font-size: 1rem; font-weight: 600; color: #fff; }
+
+    /* Progress bar toward 500-pt reward */
+    .progress-section { margin-bottom: 16px; }
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: #a0aec0;
+      margin-bottom: 7px;
+    }
+    .progress-track {
+      height: 10px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #7b2ff7, #f107a3);
+      border-radius: 99px;
+      transition: width 0.5s ease;
+    }
+    .progress-milestones {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 5px;
+      font-size: 0.65rem;
+      color: #718096;
+    }
+
+    /* Reward unlocked animation banner */
+    .reward-banner {
+      display: none;
+      background: linear-gradient(135deg, #1a6b2a, #2d9e3f);
+      border: 1px solid #6bcb77;
+      border-radius: 12px;
+      padding: 12px 14px;
+      text-align: center;
+      margin-bottom: 14px;
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(107,203,119,0.4); }
+      50%       { box-shadow: 0 0 0 8px rgba(107,203,119,0); }
+    }
+    .reward-banner .reward-title { font-size: 0.95rem; font-weight: 700; color: #fff; }
+    .reward-banner .reward-sub   { font-size: 0.78rem; color: #b8f5be; margin-top: 2px; }
+
+    /* Popup overlay for delivery result */
+    .popup-overlay {
+      display: none;
+      position: absolute; /* relative to .panel which gets position:relative */
+      inset: 0;
+      background: rgba(10, 10, 30, 0.82);
+      border-radius: 20px;
+      z-index: 10;
+      align-items: center;
+      justify-content: center;
+    }
+    .popup-overlay.active { display: flex; }
+    .popup-box {
+      background: #1a1040;
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 18px;
+      padding: 28px 24px;
+      text-align: center;
+      max-width: 280px;
+      width: 90%;
+      animation: popIn 0.25s ease;
+    }
+    @keyframes popIn {
+      from { transform: scale(0.85); opacity: 0; }
+      to   { transform: scale(1);    opacity: 1; }
+    }
+    .popup-emoji { font-size: 2.4rem; margin-bottom: 10px; }
+    .popup-title { font-size: 1.05rem; font-weight: 700; color: #fff; margin-bottom: 6px; }
+    .popup-pts   {
+      font-size: 2rem; font-weight: 700;
+      background: linear-gradient(90deg, #ffd93d, #f7931e);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin: 8px 0;
+    }
+    .popup-sub { font-size: 0.8rem; color: #a0aec0; line-height: 1.5; margin-bottom: 18px; }
+    .popup-close {
+      width: 100%;
+      padding: 11px;
+      border-radius: 10px;
+      border: none;
+      background: linear-gradient(135deg, #7b2ff7, #f107a3);
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* Scoring legend */
+    .scoring-legend {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+    .score-tier {
+      background: rgba(255,255,255,0.05);
+      border-radius: 8px;
+      padding: 7px 10px;
+      font-size: 0.7rem;
+    }
+    .score-tier .tier-label { color: #a0aec0; }
+    .score-tier .tier-pts   { font-weight: 700; color: #ffd93d; }
+
+    /* Scrollable history log */
+    .history-log {
+      max-height: 110px;
+      overflow-y: auto;
+      background: rgba(255,255,255,0.04);
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin-top: 12px;
+    }
+    .history-log::-webkit-scrollbar { width: 4px; }
+    .history-log::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 99px; }
+    .history-entry {
+      font-size: 0.73rem;
+      color: #a0aec0;
+      padding: 3px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      display: flex;
+      justify-content: space-between;
+    }
+    .history-entry:last-child { border-bottom: none; }
+    .history-entry .hpts { color: #ffd93d; font-weight: 600; }
+
+    /* ============================================================
+       MOBILE RESPONSIVE BREAKPOINT
+       On small screens, stack the two panels vertically
+    ============================================================ */
+    @media (max-width: 720px) {
+      .dashboard { grid-template-columns: 1fr; }
+      .header h1 { font-size: 1.5rem; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ============================================================
+       PAGE HEADER
+  ============================================================ -->
+  <div class="header">
+    <h1>🍔 QuickBite Dashboard</h1>
+    <p>AI-Powered Food Delivery Optimization · Live Prototype</p>
+  </div>
+
+  <!-- ============================================================
+       MAIN DASHBOARD — two columns
+  ============================================================ -->
+  <div class="dashboard">
+
+    <!-- ============================================================
+         LEFT PANEL — FEATURE 1: DYNAMIC OUTLET REALLOCATION
+    ============================================================ -->
+    <div class="panel">
+
+      <!-- Panel title -->
+      <div class="panel-title">
+        <div class="icon icon-orange">🏪</div>
+        <div>
+          <h2>Dynamic Outlet Reallocation</h2>
+        </div>
+        <span class="badge">LIVE</span>
+      </div>
+
+      <!-- Food item selector -->
+      <select id="food-select" onchange="render()">
+        <option value="Pizza">🍕 Pizza</option>
+        <option value="Burger">🍔 Burger</option>
+        <option value="Sushi">🍣 Sushi</option>
+      </select>
+
+      <!-- The three outlet cards — filled by JS -->
+      <div id="outlets-container"></div>
+
+      <!-- Why this outlet is optimal -->
+      <div class="why-box" id="why-box">Loading...</div>
+
+      <!-- Reallocate button — randomises kitchen loads -->
+      <button class="btn btn-orange" onclick="reallocate()">
+        🔀 Reallocate Order (Simulate New Loads)
+      </button>
+
+    </div><!-- end left panel -->
+
+    <!-- ============================================================
+         RIGHT PANEL — FEATURE 2: AUTOMATIC DELIVERY TRACKER
+         Points are earned by the SYSTEM based on actual delivery
+         time — drivers cannot manually trigger rewards.
+    ============================================================ -->
+    <div class="panel" style="position: relative;">
+
+      <!-- Panel title -->
+      <div class="panel-title">
+        <div class="icon icon-purple">⭐</div>
+        <div>
+          <h2>Delivery Partner Rewards</h2>
+        </div>
+        <span class="badge">AUTO</span>
+      </div>
+
+      <!-- Partner profile -->
+      <div class="partner-row">
+        <div class="avatar">R</div>
+        <div class="partner-info">
+          <h3>Rampravesh Kumar</h3>
+          <p>🛵 Senior Delivery Partner · Joined Jan 2023</p>
+        </div>
+      </div>
+
+      <!-- ── ACTIVE DELIVERY COUNTDOWN ── -->
+      <div class="delivery-card">
+        <div class="delivery-meta">
+          <span class="delivery-num" id="delivery-num">Current Delivery #1</span>
+          <span class="delivery-expected">Expected: <span id="expected-label">25 min</span></span>
+        </div>
+
+        <!-- Big countdown clock — filled by JS every second -->
+        <div class="timer-display" id="timer-display">25:00</div>
+        <div class="timer-label">Time Remaining</div>
+
+        <!-- Visual bar draining left → right as time passes -->
+        <div class="timer-track">
+          <div class="timer-bar" id="timer-bar" style="width: 100%;"></div>
+        </div>
+
+        <!-- "Mark as Delivered" — the ONLY way points are awarded -->
+        <button class="btn btn-purple" id="deliver-btn" onclick="markDelivered()">
+          📦 Mark as Delivered
+        </button>
+      </div>
+
+      <!-- ── SCORING LEGEND ── -->
+      <div class="scoring-legend">
+        <div class="score-tier">
+          <div class="tier-label">⚡ 5+ min early</div>
+          <div class="tier-pts">+30 pts — Very Fast</div>
+        </div>
+        <div class="score-tier">
+          <div class="tier-label">🚀 2–4 min early</div>
+          <div class="tier-pts">+15 pts — Fast</div>
+        </div>
+        <div class="score-tier">
+          <div class="tier-label">✅ On time (±1 min)</div>
+          <div class="tier-pts">+5 pts — On Time</div>
+        </div>
+        <div class="score-tier">
+          <div class="tier-label">🐢 Late</div>
+          <div class="tier-pts">+0 pts — No reward</div>
+        </div>
+      </div>
+
+      <!-- ── POINTS SUMMARY STRIP ── -->
+      <div class="points-strip">
+        <div class="pts-left">
+          <div class="pts-label">Total Points</div>
+          <div class="pts-value" id="pts-value">0</div>
+        </div>
+        <div class="pts-right">
+          <div class="pts-label">Deliveries Done</div>
+          <div class="pts-count" id="delivery-count">0</div>
+        </div>
+      </div>
+
+      <!-- ── PROGRESS BAR TO ₹500 REWARD ── -->
+      <div class="progress-section">
+        <div class="progress-header">
+          <span>Progress to ₹500 Bonus</span>
+          <span id="progress-label">0 / 500 pts</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" id="progress-fill" style="width: 0%;"></div>
+        </div>
+        <div class="progress-milestones">
+          <span>0</span><span>100</span><span>200</span><span>300</span><span>400</span><span>500</span>
+        </div>
+      </div>
+
+      <!-- Reward unlocked banner — appears automatically when ≥500 pts -->
+      <div class="reward-banner" id="reward-banner">
+        <div class="reward-title">🎉 Reward Unlocked!</div>
+        <div class="reward-sub">₹500 bonus credited to your account</div>
+      </div>
+
+      <!-- Next delivery button — resets timer, keeps accumulated points -->
+      <button class="btn btn-purple" id="next-btn" onclick="nextDelivery()" style="display:none;">
+        ▶ Next Delivery
+      </button>
+
+      <!-- Scrollable delivery history log -->
+      <div class="history-log" id="history-log">
+        <div class="history-entry" style="color:#718096;font-style:italic;justify-content:center;">
+          No deliveries yet — complete one to see history
+        </div>
+      </div>
+
+      <!-- ── RESULT POPUP OVERLAY ──
+           Appears over the panel when "Mark as Delivered" is clicked.
+           Shows how many minutes early/late and points earned.
+      -->
+      <div class="popup-overlay" id="popup-overlay">
+        <div class="popup-box">
+          <div class="popup-emoji" id="popup-emoji">🎉</div>
+          <div class="popup-title" id="popup-title">Delivery Complete!</div>
+          <div class="popup-pts"  id="popup-pts">+30 pts</div>
+          <div class="popup-sub"  id="popup-sub">Delivered 6 minutes early!</div>
+          <button class="popup-close" onclick="closePopup()">Got it ✓</button>
+        </div>
+      </div>
+
+    </div><!-- end right panel -->
+
+  </div><!-- end dashboard grid -->
+
+
+  <!-- ============================================================
+       JAVASCRIPT — ALL APP LOGIC BELOW
+  ============================================================ -->
+  <script>
+
+    // ============================================================
+    // FEATURE 1 DATA & LOGIC
+    // ============================================================
+
+    // Fixed base data for the three outlets
+    // Loads will change when "Reallocate" is clicked
+    const outlets = [
+      { name: 'Outlet A', load: 20, prep: 5,  dist: 1.2 },
+      { name: 'Outlet B', load: 80, prep: 15, dist: 0.8 },
+      { name: 'Outlet C', load: 45, prep: 8,  dist: 2.1 },
+    ];
+
+    /**
+     * calculateFulfillmentTime(outlet)
+     * Formula: Prep Time + (Load * 0.5) + (Distance * 2)
+     * Returns a number (minutes)
+     */
+    function calculateFulfillmentTime(o) {
+      return o.prep + (o.load * 0.5) + (o.dist * 2);
+    }
+
+    /**
+     * getLoadColor(load%)
+     * Returns a CSS color for the load bar:
+     *  - green   if load < 40%
+     *  - orange  if load 40–70%
+     *  - red     if load > 70%
+     */
+    function getLoadColor(load) {
+      if (load < 40)  return '#6bcb77';
+      if (load < 70)  return '#ffd93d';
+      return '#ff6b6b';
+    }
+
+    /**
+     * render()
+     * Builds all three outlet cards and the "why" explanation.
+     * Called on page load and whenever food or loads change.
+     */
+    function render() {
+      const food = document.getElementById('food-select').value;
+      const container = document.getElementById('outlets-container');
+
+      // Find which outlet has the lowest fulfillment time
+      const times = outlets.map(calculateFulfillmentTime);
+      const minTime = Math.min(...times);
+      const optimalIdx = times.indexOf(minTime);
+
+      // Build HTML for each outlet card
+      let html = '';
+      outlets.forEach((o, i) => {
+        const ft    = times[i].toFixed(1);
+        const lc    = getLoadColor(o.load);
+        const isOpt = i === optimalIdx;
+
+        html += `
+          <div class="outlet-card ${isOpt ? 'optimal' : ''}">
+            <div class="outlet-header">
+              <div class="outlet-name">${o.name} — ${food}</div>
+              <span class="optimal-badge">✓ OPTIMAL</span>
+            </div>
+            <div class="outlet-stats">
+              <div class="stat-box">
+                <div class="label">Kitchen Load</div>
+                <div class="value" style="color:${lc}">${o.load}%</div>
+                <div class="load-bar-wrap">
+                  <div class="load-bar" style="width:${o.load}%;background:${lc}"></div>
+                </div>
+              </div>
+              <div class="stat-box">
+                <div class="label">Prep Time</div>
+                <div class="value">${o.prep} min</div>
+              </div>
+              <div class="stat-box">
+                <div class="label">Distance</div>
+                <div class="value">${o.dist} km</div>
+              </div>
+            </div>
+            <div class="fulfillment">
+              <span class="fkey">Total Fulfillment Time (prep + load×0.5 + dist×2)</span>
+              <span class="fval">${ft} min</span>
+            </div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+
+      // Update the "why" explanation box
+      const best = outlets[optimalIdx];
+      document.getElementById('why-box').innerHTML =
+        `<strong>✅ ${best.name} is optimal</strong> for your ${food} order.<br>
+         Fulfillment time: <strong>${minTime.toFixed(1)} min</strong>
+         — lowest among all outlets.<br>
+         Kitchen load is <strong>${best.load}%</strong>, prep is <strong>${best.prep} min</strong>,
+         distance <strong>${best.dist} km</strong>.`;
+    }
+
+    /**
+     * reallocate()
+     * Randomly changes kitchen loads (and slightly adjusts prep times)
+     * to simulate the system reassigning capacity in real time.
+     */
+    function reallocate() {
+      outlets.forEach(o => {
+        // Random load between 10% and 90%
+        o.load = Math.floor(Math.random() * 81) + 10;
+        // Prep time loosely follows load: busier = longer
+        o.prep = Math.round(3 + o.load * 0.15);
+      });
+      render();
+    }
+
+
+    // ============================================================
+    // FEATURE 2 — AUTOMATIC DELIVERY TRACKER
+    //
+    // SECURITY NOTE (production consideration):
+    // In production, the timer would NOT run client-side.
+    // Instead, the server records the delivery assignment
+    // timestamp and the GPS-confirmed arrival timestamp.
+    // Points are calculated server-side by comparing those two
+    // values — the driver has no way to manipulate the result.
+    // The client only receives the final outcome.
+    // ============================================================
+
+    // ── State ──
+    let totalPoints    = 0;       // accumulates across deliveries
+    let deliveryCount  = 0;       // how many deliveries completed
+    let expectedSecs   = 25 * 60; // current delivery's expected time in seconds
+    let remainingSecs  = 25 * 60; // countdown value
+    let timerInterval  = null;    // reference to setInterval so we can stop it
+    let timerRunning   = true;    // false after delivery is marked
+    let rewardUnlocked = false;   // flag so banner only fires once
+    const THRESHOLD    = 500;     // points needed for the ₹500 reward
+
+    /**
+     * startTimer()
+     * Begins the 1-second countdown interval.
+     * Updates the clock display, the drain bar, and color cues.
+     */
+    function startTimer() {
+      timerRunning = true;
+      document.getElementById('deliver-btn').disabled = false;
+      document.getElementById('deliver-btn').style.opacity = '1';
+
+      timerInterval = setInterval(() => {
+        if (!timerRunning) return;
+
+        remainingSecs--;
+
+        // Let the clock run past 0 to show lateness (goes negative = late)
+        updateTimerDisplay();
+
+        // Drain bar — only goes to 0, never below
+        const pct = Math.max(0, (remainingSecs / expectedSecs) * 100);
+        const bar = document.getElementById('timer-bar');
+        bar.style.width = pct + '%';
+
+        // Turn red + urgent when under 3 minutes remaining
+        const isUrgent = remainingSecs < 180;
+        document.getElementById('timer-display').className =
+          'timer-display' + (remainingSecs < 0 ? ' done' : isUrgent ? ' urgent' : '');
+        bar.className = 'timer-bar' + (isUrgent ? ' urgent' : '');
+
+      }, 1000);
+    }
+
+    /**
+     * updateTimerDisplay()
+     * Formats remainingSecs as MM:SS and writes it to the DOM.
+     * Shows negative time (e.g. -01:30) when the driver is running late.
+     */
+    function updateTimerDisplay() {
+      const abs  = Math.abs(remainingSecs);
+      const m    = Math.floor(abs / 60);
+      const s    = abs % 60;
+      const sign = remainingSecs < 0 ? '-' : '';
+      document.getElementById('timer-display').textContent =
+        sign + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+    }
+
+    /**
+     * markDelivered()
+     * Called when the driver taps "Mark as Delivered".
+     * Stops the timer, computes minutes remaining, awards points
+     * automatically using the scoring formula, shows the popup.
+     *
+     * SCORING FORMULA:
+     *   minutesEarly = remainingSecs / 60  (negative = late)
+     *   ≥ 5 min early  → +30 pts  (Very Fast)
+     *   2–4 min early  → +15 pts  (Fast)
+     *   ±1 min (–1 to 1) → +5 pts (On Time)
+     *   < –1 min (late) → +0 pts  (No reward)
+     */
+    function markDelivered() {
+      // Stop the countdown
+      timerRunning = false;
+      clearInterval(timerInterval);
+
+      // Disable the button so it can't be clicked again
+      const btn = document.getElementById('deliver-btn');
+      btn.disabled = true;
+      btn.style.opacity = '0.5';
+
+      // Calculate how early/late in whole minutes
+      const minutesEarly = remainingSecs / 60; // can be negative
+
+      // Determine tier & points
+      let earnedPts, tier, emoji, message;
+      if (minutesEarly >= 5) {
+        earnedPts = 30; tier = 'Very Fast'; emoji = '⚡';
+        message = `${Math.floor(minutesEarly)} minutes early!`;
+      } else if (minutesEarly >= 2) {
+        earnedPts = 15; tier = 'Fast'; emoji = '🚀';
+        message = `${Math.floor(minutesEarly)} minutes early!`;
+      } else if (minutesEarly >= -1) {
+        earnedPts = 5; tier = 'On Time'; emoji = '✅';
+        message = 'Delivered right on time!';
+      } else {
+        earnedPts = 0; tier = 'Late'; emoji = '🐢';
+        message = `${Math.abs(Math.ceil(minutesEarly))} minutes late — no points this time.`;
+      }
+
+      // Add to total
+      totalPoints  += earnedPts;
+      deliveryCount += 1;
+
+      // Update UI numbers
+      updatePointsUI();
+
+      // Log this delivery in history
+      addHistoryEntry(`Delivery #${deliveryCount} — ${tier}`, earnedPts);
+
+      // Show result popup
+      document.getElementById('popup-emoji').textContent = emoji;
+      document.getElementById('popup-title').textContent =
+        earnedPts > 0 ? 'Delivery Complete!' : 'Delivery Complete';
+      document.getElementById('popup-pts').textContent =
+        earnedPts > 0 ? `+${earnedPts} pts` : '0 pts';
+      document.getElementById('popup-sub').textContent = message;
+      document.getElementById('popup-overlay').classList.add('active');
+    }
+
+    /**
+     * closePopup()
+     * Hides the result popup and reveals the "Next Delivery" button.
+     */
+    function closePopup() {
+      document.getElementById('popup-overlay').classList.remove('active');
+      document.getElementById('next-btn').style.display = 'block';
+    }
+
+    /**
+     * nextDelivery()
+     * Resets the timer to a new random expected time (20–40 min).
+     * Points are KEPT — only the clock resets.
+     */
+    function nextDelivery() {
+      // Pick random expected time between 20 and 40 minutes
+      const newMinutes = Math.floor(Math.random() * 21) + 20; // 20–40
+      expectedSecs  = newMinutes * 60;
+      remainingSecs = newMinutes * 60;
+
+      // Update the expected time label
+      document.getElementById('expected-label').textContent = newMinutes + ' min';
+
+      // Update delivery number label
+      document.getElementById('delivery-num').textContent =
+        `Current Delivery #${deliveryCount + 1}`;
+
+      // Reset the timer display and bar
+      updateTimerDisplay();
+      document.getElementById('timer-bar').style.width = '100%';
+      document.getElementById('timer-bar').className = 'timer-bar';
+      document.getElementById('timer-display').className = 'timer-display';
+
+      // Hide "Next Delivery" button again
+      document.getElementById('next-btn').style.display = 'none';
+
+      // Start the new countdown
+      clearInterval(timerInterval);
+      startTimer();
+    }
+
+    /**
+     * updatePointsUI()
+     * Refreshes the points total, progress bar, delivery count,
+     * and fires the reward banner if the threshold is crossed.
+     */
+    function updatePointsUI() {
+      // Points number
+      document.getElementById('pts-value').textContent = totalPoints;
+
+      // Delivery count
+      document.getElementById('delivery-count').textContent = deliveryCount;
+
+      // Progress bar (caps at 100%)
+      const pct = Math.min((totalPoints / THRESHOLD) * 100, 100);
+      document.getElementById('progress-fill').style.width = pct + '%';
+      document.getElementById('progress-label').textContent =
+        `${totalPoints} / ${THRESHOLD} pts`;
+
+      // Fire reward banner exactly once when threshold is crossed
+      if (totalPoints >= THRESHOLD && !rewardUnlocked) {
+        rewardUnlocked = true;
+        document.getElementById('reward-banner').style.display = 'block';
+      }
+    }
+
+    /**
+     * addHistoryEntry(label, pts)
+     * Prepends a new row to the delivery history log.
+     * If this is the first entry, clears the placeholder text.
+     */
+    function addHistoryEntry(label, pts) {
+      const log = document.getElementById('history-log');
+
+      // Remove "no deliveries yet" placeholder on first entry
+      if (deliveryCount === 1) log.innerHTML = '';
+
+      const now  = new Date();
+      const time = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+
+      const entry = document.createElement('div');
+      entry.className = 'history-entry';
+      entry.innerHTML =
+        `<span>${label} <em style="color:#718096;font-size:0.68rem">${time}</em></span>` +
+        `<span class="hpts">${pts > 0 ? '+' + pts : '0'} pts</span>`;
+
+      log.insertBefore(entry, log.firstChild);
+    }
+
+
+    // ============================================================
+    // BOOT — Run once when page loads
+    // ============================================================
+    render();       // draw the outlet cards (Feature 1)
+    startTimer();   // begin the first delivery countdown (Feature 2)
+
+  </script>
+
+</body>
+</html>
