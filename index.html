@@ -52,6 +52,12 @@
       margin: 0 auto;
     }
 
+    /* Full-width row for KPT panel below */
+    .dashboard-full {
+      max-width: 1100px;
+      margin: 24px auto 0;
+    }
+
     /* Each panel / card */
     .panel {
       background: rgba(255, 255, 255, 0.07);
@@ -76,6 +82,8 @@
     }
     .icon-orange { background: linear-gradient(135deg, #ff6b35, #f7931e); }
     .icon-purple { background: linear-gradient(135deg, #7b2ff7, #f107a3); }
+    /* NEW: teal icon for KPT panel */
+    .icon-teal   { background: linear-gradient(135deg, #00b4d8, #0077b6); }
 
     .panel-title h2 {
       font-size: 1.05rem;
@@ -232,6 +240,22 @@
       background: linear-gradient(135deg, #7b2ff7, #f107a3);
       color: #fff;
     }
+    /* NEW: teal button for KPT actions */
+    .btn-teal {
+      background: linear-gradient(135deg, #00b4d8, #0077b6);
+      color: #fff;
+    }
+    .btn-sm {
+      width: auto;
+      padding: 8px 18px;
+      font-size: 0.82rem;
+      border-radius: 10px;
+    }
+    .btn-gray {
+      background: rgba(255,255,255,0.12);
+      color: #ccc;
+      border: 1px solid rgba(255,255,255,0.15);
+    }
     .btn + .btn { margin-top: 8px; }
 
     /* ============================================================
@@ -295,10 +319,10 @@
       color: #fff;
       line-height: 1;
       margin: 8px 0 4px;
-      font-variant-numeric: tabular-nums; /* prevents layout shift as digits change */
+      font-variant-numeric: tabular-nums;
       transition: color 0.4s;
     }
-    .timer-display.urgent { color: #ff6b6b; } /* goes red when <3 min left */
+    .timer-display.urgent { color: #ff6b6b; }
     .timer-display.done   { color: #a0aec0; }
 
     .timer-label {
@@ -399,7 +423,7 @@
     /* Popup overlay for delivery result */
     .popup-overlay {
       display: none;
-      position: absolute; /* relative to .panel which gets position:relative */
+      position: absolute;
       inset: 0;
       background: rgba(10, 10, 30, 0.82);
       border-radius: 20px;
@@ -486,12 +510,368 @@
 
     /* ============================================================
        MOBILE RESPONSIVE BREAKPOINT
-       On small screens, stack the two panels vertically
+       On small screens, stack the panels vertically
     ============================================================ */
     @media (max-width: 720px) {
       .dashboard { grid-template-columns: 1fr; }
       .header h1 { font-size: 1.5rem; }
+      .kpt-grid  { grid-template-columns: 1fr !important; }
+      .kpt-section-row { flex-direction: column !important; }
     }
+
+
+    /* ============================================================
+       FEATURE 3: SMART KPT MANAGEMENT SYSTEM — NEW STYLES
+       All classes prefixed with "kpt-" to avoid collisions
+    ============================================================ -->
+    */
+
+    /* Divider title between rows */
+    .section-divider {
+      text-align: center;
+      margin: 10px 0 0;
+      position: relative;
+    }
+    .section-divider::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 0; right: 0;
+      height: 1px;
+      background: rgba(255,255,255,0.1);
+    }
+    .section-divider span {
+      position: relative;
+      background: transparent;
+      font-size: 0.72rem;
+      color: #718096;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 0 12px;
+    }
+
+    /* The KPT panel itself uses .panel (reused) + full width */
+    .kpt-panel {
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(0, 180, 216, 0.25);
+      border-radius: 20px;
+      padding: 28px 28px 24px;
+      backdrop-filter: blur(12px);
+      position: relative;
+      overflow: hidden;
+    }
+    /* Subtle glow accent in top-right corner */
+    .kpt-panel::before {
+      content: '';
+      position: absolute;
+      top: -60px; right: -60px;
+      width: 200px; height: 200px;
+      background: radial-gradient(circle, rgba(0,180,216,0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    /* 4-column grid inside KPT panel for the 4 sections */
+    .kpt-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      gap: 20px;
+      margin-top: 20px;
+    }
+
+    /* Section heading inside KPT */
+    .kpt-section-label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #00b4d8;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .kpt-section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: rgba(0,180,216,0.25);
+    }
+
+    /* Shared inner card style for each sub-section */
+    .kpt-card {
+      background: rgba(0,180,216,0.05);
+      border: 1px solid rgba(0,180,216,0.15);
+      border-radius: 14px;
+      padding: 16px;
+      height: 100%;
+    }
+
+    /* Label above any input/select inside KPT */
+    .kpt-label {
+      font-size: 0.72rem;
+      color: #a0aec0;
+      margin-bottom: 5px;
+      display: block;
+    }
+
+    /* KPT-specific select (inherits global but overrides margin) */
+    .kpt-select {
+      margin-bottom: 12px;
+    }
+
+    /* Slider row */
+    .kpt-slider-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .kpt-slider-row input[type=range] {
+      flex: 1;
+      -webkit-appearance: none;
+      appearance: none;
+      height: 5px;
+      border-radius: 99px;
+      background: rgba(255,255,255,0.15);
+      outline: none;
+      cursor: pointer;
+    }
+    .kpt-slider-row input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #00b4d8, #0077b6);
+      cursor: pointer;
+    }
+    .kpt-slider-val {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #00b4d8;
+      min-width: 36px;
+      text-align: right;
+    }
+
+    /* Toggle (peak hours YES/NO) */
+    .kpt-toggle-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .kpt-toggle {
+      position: relative;
+      width: 44px;
+      height: 24px;
+      flex-shrink: 0;
+    }
+    .kpt-toggle input { opacity: 0; width: 0; height: 0; }
+    .kpt-toggle-slider {
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0.15);
+      border-radius: 99px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .kpt-toggle-slider::before {
+      content: '';
+      position: absolute;
+      left: 3px; top: 3px;
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      background: #fff;
+      transition: transform 0.3s;
+    }
+    .kpt-toggle input:checked + .kpt-toggle-slider { background: #00b4d8; }
+    .kpt-toggle input:checked + .kpt-toggle-slider::before { transform: translateX(20px); }
+    .kpt-toggle-label { font-size: 0.82rem; color: #e2e8f0; }
+    .kpt-toggle-state { font-size: 0.75rem; font-weight: 700; color: #00b4d8; }
+
+    /* The predicted KPT result box in Section A */
+    .kpt-result-box {
+      background: rgba(0,180,216,0.1);
+      border: 1px solid rgba(0,180,216,0.35);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-top: 8px;
+      text-align: center;
+    }
+    .kpt-result-box .kpt-result-label {
+      font-size: 0.67rem;
+      color: #7dd3fc;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+    }
+    .kpt-result-box .kpt-result-time {
+      font-size: 1.9rem;
+      font-weight: 700;
+      color: #00b4d8;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 2px;
+    }
+    .kpt-formula-box {
+      background: rgba(255,255,255,0.04);
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 0.65rem;
+      color: #718096;
+      font-family: monospace;
+      margin-top: 8px;
+      line-height: 1.6;
+      border: 1px solid rgba(255,255,255,0.07);
+    }
+
+    /* Section B: Chef manual input */
+    .kpt-chef-current {
+      background: rgba(255,255,255,0.05);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 0.82rem;
+      color: #a0aec0;
+      margin-bottom: 12px;
+    }
+    .kpt-chef-current strong { color: #00b4d8; }
+
+    .kpt-input {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(0,180,216,0.35);
+      background: rgba(255,255,255,0.07);
+      color: #fff;
+      font-size: 1rem;
+      font-family: 'Inter', sans-serif;
+      font-weight: 600;
+      letter-spacing: 2px;
+      margin-bottom: 10px;
+      outline: none;
+      transition: border-color 0.2s;
+      text-align: center;
+    }
+    .kpt-input:focus { border-color: #00b4d8; }
+    .kpt-input::placeholder { color: #4a5568; font-weight: 400; letter-spacing: 0; }
+
+    .kpt-btn-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .kpt-btn-row .btn { margin-top: 0; }
+
+    .kpt-chef-msg {
+      font-size: 0.78rem;
+      color: #6bcb77;
+      background: rgba(107,203,119,0.1);
+      border-radius: 8px;
+      padding: 8px 10px;
+      display: none;
+    }
+    .kpt-chef-note {
+      font-size: 0.71rem;
+      color: #718096;
+      line-height: 1.5;
+      margin-top: 10px;
+      border-top: 1px solid rgba(255,255,255,0.07);
+      padding-top: 10px;
+    }
+
+    /* Section C: Live Countdown Timer */
+    .kpt-big-timer {
+      font-size: 3.8rem;
+      font-weight: 800;
+      letter-spacing: 4px;
+      font-variant-numeric: tabular-nums;
+      color: #00b4d8;
+      text-align: center;
+      margin: 8px 0 4px;
+      line-height: 1;
+      text-shadow: 0 0 30px rgba(0,180,216,0.45);
+      transition: color 0.4s, text-shadow 0.4s;
+    }
+    .kpt-big-timer.kpt-urgent {
+      color: #ff6b6b;
+      text-shadow: 0 0 30px rgba(255,107,107,0.5);
+      animation: timerPulse 0.8s infinite;
+    }
+    .kpt-big-timer.kpt-done {
+      color: #6bcb77;
+      text-shadow: 0 0 30px rgba(107,203,119,0.5);
+      animation: none;
+    }
+    @keyframes timerPulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+    .kpt-timer-label {
+      text-align: center;
+      font-size: 0.65rem;
+      color: #718096;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 12px;
+    }
+    .kpt-timer-track {
+      height: 6px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 99px;
+      overflow: hidden;
+      margin-bottom: 14px;
+    }
+    .kpt-timer-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #00b4d8, #0077b6);
+      border-radius: 99px;
+      transition: width 1s linear, background 0.4s;
+    }
+    .kpt-timer-bar.kpt-urgent { background: linear-gradient(90deg, #ff6b35, #ff6b6b); }
+    .kpt-timer-status {
+      text-align: center;
+      font-size: 0.85rem;
+      color: #a0aec0;
+      margin-bottom: 12px;
+      min-height: 20px;
+    }
+    .kpt-timer-status.ready {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #6bcb77;
+      animation: pulse 1.2s infinite;
+    }
+    .kpt-ctrl-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    .kpt-ctrl-row .btn { margin-top: 0; flex: 1; }
+
+    /* Section D: Benefits */
+    .kpt-benefits-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .kpt-benefits-list li {
+      font-size: 0.82rem;
+      color: #b8f5be;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      line-height: 1.5;
+    }
+    .kpt-benefits-list li:last-child { border-bottom: none; }
+    .kpt-benefit-badge {
+      display: inline-block;
+      background: rgba(107,203,119,0.15);
+      border: 1px solid rgba(107,203,119,0.3);
+      border-radius: 20px;
+      padding: 3px 10px;
+      font-size: 0.68rem;
+      color: #6bcb77;
+      font-weight: 600;
+      margin-top: 10px;
+      letter-spacing: 0.5px;
+    }
+
   </style>
 </head>
 
@@ -506,7 +886,7 @@
   </div>
 
   <!-- ============================================================
-       MAIN DASHBOARD — two columns
+       ROW 1: Two-column — Outlet Reallocation + Rewards Club
   ============================================================ -->
   <div class="dashboard">
 
@@ -671,7 +1051,203 @@
 
     </div><!-- end right panel -->
 
-  </div><!-- end dashboard grid -->
+  </div><!-- end row-1 dashboard grid -->
+
+
+  <!-- ============================================================
+       ROW 2: FULL-WIDTH — FEATURE 3: SMART KPT MANAGEMENT SYSTEM
+       NEW FEATURE — Added below existing two panels.
+       KPT = Kitchen Preparation Time
+  ============================================================ -->
+  <div class="dashboard-full">
+
+    <!-- Optional visual divider between rows -->
+    <div class="section-divider" style="margin-bottom:20px;">
+      <span>⬇ New Feature</span>
+    </div>
+
+    <div class="kpt-panel">
+
+      <!-- ── KPT PANEL HEADER ── -->
+      <div class="panel-title" style="margin-bottom:6px;">
+        <div class="icon icon-teal">⏱️</div>
+        <div>
+          <h2>Smart KPT Management System</h2>
+          <p style="font-size:0.75rem;color:#718096;margin-top:2px;">
+            Kitchen Preparation Time · Rider Sync · Aggregator-Aware
+          </p>
+        </div>
+        <span class="badge" style="background:rgba(0,180,216,0.2);color:#00b4d8;">SMART</span>
+      </div>
+
+      <!-- Formula strip -->
+      <div style="background:rgba(0,180,216,0.06);border:1px solid rgba(0,180,216,0.18);border-radius:10px;padding:9px 14px;font-size:0.72rem;color:#7dd3fc;font-family:monospace;margin-bottom:4px;">
+        ETA = t_base × LoadFactor × PeakFactor &nbsp;|&nbsp;
+        LoadFactor = 1 + 0.25 if load &gt; 70% &nbsp;|&nbsp;
+        PeakFactor = 1 + 0.30 if peak hours &nbsp;|&nbsp;
+        MatchDiscount = −20% if last dish matches
+      </div>
+
+      <!-- ── 4-column sections grid ── -->
+      <div class="kpt-grid">
+
+        <!-- ─────────────────────────────────────────
+             SECTION A: SYSTEM PREDICTION
+             Auto-calculates KPT from inputs
+        ───────────────────────────────────────── -->
+        <div class="kpt-card">
+          <div class="kpt-section-label">📊 A — System Prediction</div>
+
+          <!-- Dish selector -->
+          <label class="kpt-label">Select Dish</label>
+          <select class="kpt-select" id="kpt-dish" onchange="kptCalculate()">
+            <option value="roasted_chicken">🍗 Roasted Chicken (5 min)</option>
+            <option value="butter_chicken">🍛 Butter Chicken (8 min)</option>
+            <option value="paneer_tikka">🥩 Paneer Tikka (6 min)</option>
+            <option value="biryani">🍚 Biryani (10 min)</option>
+          </select>
+
+          <!-- Last dish prepared (for match discount) -->
+          <label class="kpt-label">Last Dish Prepared</label>
+          <select class="kpt-select" id="kpt-last-dish" onchange="kptCalculate()">
+            <option value="none">None</option>
+            <option value="roasted_chicken">🍗 Roasted Chicken</option>
+            <option value="butter_chicken">🍛 Butter Chicken</option>
+            <option value="paneer_tikka">🥩 Paneer Tikka</option>
+            <option value="biryani">🍚 Biryani</option>
+          </select>
+
+          <!-- Restaurant load slider (0–100%, default 40%) -->
+          <label class="kpt-label">Current Restaurant Load</label>
+          <div class="kpt-slider-row">
+            <input type="range" id="kpt-load-slider" min="0" max="100" value="40"
+                   oninput="kptSliderUpdate(); kptCalculate()" />
+            <span class="kpt-slider-val" id="kpt-load-val">40%</span>
+          </div>
+
+          <!-- Peak hours toggle -->
+          <div class="kpt-toggle-row">
+            <label class="kpt-toggle">
+              <input type="checkbox" id="kpt-peak-toggle" onchange="kptCalculate()" />
+              <span class="kpt-toggle-slider"></span>
+            </label>
+            <span class="kpt-toggle-label">Peak Hours</span>
+            <span class="kpt-toggle-state" id="kpt-peak-state">OFF</span>
+          </div>
+
+          <!-- Calculated KPT result -->
+          <div class="kpt-result-box">
+            <div class="kpt-result-label">System Predicted KPT</div>
+            <div class="kpt-result-time" id="kpt-predicted-display">05:00</div>
+          </div>
+
+          <!-- Live breakdown formula -->
+          <div class="kpt-formula-box" id="kpt-formula-detail">
+            Base: 300s × 1.00 × 1.00 = 300s
+          </div>
+        </div><!-- end Section A -->
+
+
+        <!-- ─────────────────────────────────────────
+             SECTION B: MANUAL CHEF INPUT
+             Chef can override the predicted KPT
+        ───────────────────────────────────────── -->
+        <div class="kpt-card">
+          <div class="kpt-section-label">👨‍🍳 B — Chef Override</div>
+
+          <!-- Shows the current KPT the chef is about to override -->
+          <div class="kpt-chef-current">
+            System predicts: <strong id="kpt-chef-predicted-val">05:00</strong>
+          </div>
+
+          <!-- Chef types new time in MM:SS format -->
+          <label class="kpt-label">Enter New Prep Time (MM:SS)</label>
+          <input
+            type="text"
+            id="kpt-chef-input"
+            class="kpt-input"
+            placeholder="e.g. 07:30"
+            maxlength="5"
+            oninput="kptFormatInput(this)"
+          />
+
+          <!-- Update / Cancel / Save buttons -->
+          <div class="kpt-btn-row">
+            <button class="btn btn-teal btn-sm" onclick="kptChefUpdate()">✏️ Update</button>
+            <button class="btn btn-gray btn-sm" onclick="kptChefCancel()">Cancel</button>
+            <button class="btn btn-sm" style="background:linear-gradient(135deg,#1a6b2a,#2d9e3f);color:#fff;" onclick="kptChefSave()">💾 Save</button>
+          </div>
+
+          <!-- Confirmation message shown after chef saves -->
+          <div class="kpt-chef-msg" id="kpt-chef-msg">
+            ✅ KPT manually updated by chef to <strong id="kpt-chef-saved-val">--:--</strong>
+          </div>
+
+          <!-- Context note for the chef -->
+          <div class="kpt-chef-note">
+            💡 <strong style="color:#e2e8f0;">Chef knows ground reality</strong> — can handle
+            multiple aggregators (Swiggy, Zomato, Dunzo) and bulk orders simultaneously.
+            Chef override takes precedence over system prediction.
+          </div>
+        </div><!-- end Section B -->
+
+
+        <!-- ─────────────────────────────────────────
+             SECTION C: LIVE COUNTDOWN TIMER
+             Visible to delivery partner / rider
+        ───────────────────────────────────────── -->
+        <div class="kpt-card" style="text-align:center;">
+          <div class="kpt-section-label">🛵 C — Live Rider Timer</div>
+
+          <!-- BIG countdown display — most prominent element -->
+          <div class="kpt-big-timer" id="kpt-big-timer">05:00</div>
+          <div class="kpt-timer-label">Kitchen Countdown</div>
+
+          <!-- Progress bar showing time consumed -->
+          <div class="kpt-timer-track">
+            <div class="kpt-timer-bar" id="kpt-timer-bar" style="width:100%;"></div>
+          </div>
+
+          <!-- Status message: idle / counting / done -->
+          <div class="kpt-timer-status" id="kpt-timer-status">Press START to begin</div>
+
+          <!-- Start Preparation button — initiates the countdown -->
+          <button class="btn btn-teal" id="kpt-start-btn" onclick="kptTimerStart()" style="margin-bottom:8px;">
+            ▶ START PREPARATION
+          </button>
+
+          <!-- Pause and Reset controls for demo purposes -->
+          <div class="kpt-ctrl-row">
+            <button class="btn btn-gray" id="kpt-pause-btn" onclick="kptTimerPause()">⏸ Pause</button>
+            <button class="btn btn-gray" onclick="kptTimerReset()">↺ Reset</button>
+          </div>
+        </div><!-- end Section C -->
+
+
+        <!-- ─────────────────────────────────────────
+             SECTION D: BENEFITS DISPLAY
+             Static informational bullet points
+        ───────────────────────────────────────── -->
+        <div class="kpt-card">
+          <div class="kpt-section-label">🎯 D — System Benefits</div>
+
+          <ul class="kpt-benefits-list">
+            <li>✅ <strong>Rider arrival synchronised</strong> with KPT — rider dispatched when prep nears completion</li>
+            <li>✅ <strong>Minimize rider arrival delays</strong> — no late pickups due to underestimated prep time</li>
+            <li>✅ <strong>Reduce early arrival</strong> and waiting at restaurant — cost and time savings for partner</li>
+            <li>✅ <strong>Reduce order cancellation</strong> — accurate ETAs set correct customer expectations</li>
+            <li>✅ <strong>Save overall delivery time</strong> — tighter prep-to-pickup handoff shortens end-to-end time</li>
+          </ul>
+
+          <!-- Visual highlight badge -->
+          <div>
+            <span class="kpt-benefit-badge">🏆 Reduces end-to-end ETA by ~18%</span>
+          </div>
+        </div><!-- end Section D -->
+
+      </div><!-- end kpt-grid -->
+    </div><!-- end kpt-panel -->
+  </div><!-- end dashboard-full row-2 -->
 
 
   <!-- ============================================================
@@ -684,50 +1260,29 @@
     // ============================================================
 
     // Fixed base data for the three outlets
-    // Loads will change when "Reallocate" is clicked
     const outlets = [
       { name: 'Outlet A', load: 20, prep: 5,  dist: 1.2 },
       { name: 'Outlet B', load: 80, prep: 15, dist: 0.8 },
       { name: 'Outlet C', load: 45, prep: 8,  dist: 2.1 },
     ];
 
-    /**
-     * calculateFulfillmentTime(outlet)
-     * Formula: Prep Time + (Load * 0.5) + (Distance * 2)
-     * Returns a number (minutes)
-     */
     function calculateFulfillmentTime(o) {
       return o.prep + (o.load * 0.5) + (o.dist * 2);
     }
 
-    /**
-     * getLoadColor(load%)
-     * Returns a CSS color for the load bar:
-     *  - green   if load < 40%
-     *  - orange  if load 40–70%
-     *  - red     if load > 70%
-     */
     function getLoadColor(load) {
       if (load < 40)  return '#6bcb77';
       if (load < 70)  return '#ffd93d';
       return '#ff6b6b';
     }
 
-    /**
-     * render()
-     * Builds all three outlet cards and the "why" explanation.
-     * Called on page load and whenever food or loads change.
-     */
     function render() {
       const food = document.getElementById('food-select').value;
       const container = document.getElementById('outlets-container');
-
-      // Find which outlet has the lowest fulfillment time
       const times = outlets.map(calculateFulfillmentTime);
       const minTime = Math.min(...times);
       const optimalIdx = times.indexOf(minTime);
 
-      // Build HTML for each outlet card
       let html = '';
       outlets.forEach((o, i) => {
         const ft    = times[i].toFixed(1);
@@ -767,7 +1322,6 @@
 
       container.innerHTML = html;
 
-      // Update the "why" explanation box
       const best = outlets[optimalIdx];
       document.getElementById('why-box').innerHTML =
         `<strong>✅ ${best.name} is optimal</strong> for your ${food} order.<br>
@@ -777,16 +1331,9 @@
          distance <strong>${best.dist} km</strong>.`;
     }
 
-    /**
-     * reallocate()
-     * Randomly changes kitchen loads (and slightly adjusts prep times)
-     * to simulate the system reassigning capacity in real time.
-     */
     function reallocate() {
       outlets.forEach(o => {
-        // Random load between 10% and 90%
         o.load = Math.floor(Math.random() * 81) + 10;
-        // Prep time loosely follows load: busier = longer
         o.prep = Math.round(3 + o.load * 0.15);
       });
       render();
@@ -795,31 +1342,17 @@
 
     // ============================================================
     // FEATURE 2 — AUTOMATIC DELIVERY TRACKER
-    //
-    // SECURITY NOTE (production consideration):
-    // In production, the timer would NOT run client-side.
-    // Instead, the server records the delivery assignment
-    // timestamp and the GPS-confirmed arrival timestamp.
-    // Points are calculated server-side by comparing those two
-    // values — the driver has no way to manipulate the result.
-    // The client only receives the final outcome.
     // ============================================================
 
-    // ── State ──
-    let totalPoints    = 0;       // accumulates across deliveries
-    let deliveryCount  = 0;       // how many deliveries completed
-    let expectedSecs   = 25 * 60; // current delivery's expected time in seconds
-    let remainingSecs  = 25 * 60; // countdown value
-    let timerInterval  = null;    // reference to setInterval so we can stop it
-    let timerRunning   = true;    // false after delivery is marked
-    let rewardUnlocked = false;   // flag so banner only fires once
-    const THRESHOLD    = 500;     // points needed for the ₹500 reward
+    let totalPoints    = 0;
+    let deliveryCount  = 0;
+    let expectedSecs   = 25 * 60;
+    let remainingSecs  = 25 * 60;
+    let timerInterval  = null;
+    let timerRunning   = true;
+    let rewardUnlocked = false;
+    const THRESHOLD    = 500;
 
-    /**
-     * startTimer()
-     * Begins the 1-second countdown interval.
-     * Updates the clock display, the drain bar, and color cues.
-     */
     function startTimer() {
       timerRunning = true;
       document.getElementById('deliver-btn').disabled = false;
@@ -827,31 +1360,18 @@
 
       timerInterval = setInterval(() => {
         if (!timerRunning) return;
-
         remainingSecs--;
-
-        // Let the clock run past 0 to show lateness (goes negative = late)
         updateTimerDisplay();
-
-        // Drain bar — only goes to 0, never below
         const pct = Math.max(0, (remainingSecs / expectedSecs) * 100);
         const bar = document.getElementById('timer-bar');
         bar.style.width = pct + '%';
-
-        // Turn red + urgent when under 3 minutes remaining
         const isUrgent = remainingSecs < 180;
         document.getElementById('timer-display').className =
           'timer-display' + (remainingSecs < 0 ? ' done' : isUrgent ? ' urgent' : '');
         bar.className = 'timer-bar' + (isUrgent ? ' urgent' : '');
-
       }, 1000);
     }
 
-    /**
-     * updateTimerDisplay()
-     * Formats remainingSecs as MM:SS and writes it to the DOM.
-     * Shows negative time (e.g. -01:30) when the driver is running late.
-     */
     function updateTimerDisplay() {
       const abs  = Math.abs(remainingSecs);
       const m    = Math.floor(abs / 60);
@@ -861,33 +1381,14 @@
         sign + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
     }
 
-    /**
-     * markDelivered()
-     * Called when the driver taps "Mark as Delivered".
-     * Stops the timer, computes minutes remaining, awards points
-     * automatically using the scoring formula, shows the popup.
-     *
-     * SCORING FORMULA:
-     *   minutesEarly = remainingSecs / 60  (negative = late)
-     *   ≥ 5 min early  → +30 pts  (Very Fast)
-     *   2–4 min early  → +15 pts  (Fast)
-     *   ±1 min (–1 to 1) → +5 pts (On Time)
-     *   < –1 min (late) → +0 pts  (No reward)
-     */
     function markDelivered() {
-      // Stop the countdown
       timerRunning = false;
       clearInterval(timerInterval);
-
-      // Disable the button so it can't be clicked again
       const btn = document.getElementById('deliver-btn');
       btn.disabled = true;
       btn.style.opacity = '0.5';
 
-      // Calculate how early/late in whole minutes
-      const minutesEarly = remainingSecs / 60; // can be negative
-
-      // Determine tier & points
+      const minutesEarly = remainingSecs / 60;
       let earnedPts, tier, emoji, message;
       if (minutesEarly >= 5) {
         earnedPts = 30; tier = 'Very Fast'; emoji = '⚡';
@@ -903,17 +1404,11 @@
         message = `${Math.abs(Math.ceil(minutesEarly))} minutes late — no points this time.`;
       }
 
-      // Add to total
       totalPoints  += earnedPts;
       deliveryCount += 1;
-
-      // Update UI numbers
       updatePointsUI();
-
-      // Log this delivery in history
       addHistoryEntry(`Delivery #${deliveryCount} — ${tier}`, earnedPts);
 
-      // Show result popup
       document.getElementById('popup-emoji').textContent = emoji;
       document.getElementById('popup-title').textContent =
         earnedPts > 0 ? 'Delivery Complete!' : 'Delivery Complete';
@@ -923,101 +1418,370 @@
       document.getElementById('popup-overlay').classList.add('active');
     }
 
-    /**
-     * closePopup()
-     * Hides the result popup and reveals the "Next Delivery" button.
-     */
     function closePopup() {
       document.getElementById('popup-overlay').classList.remove('active');
       document.getElementById('next-btn').style.display = 'block';
     }
 
-    /**
-     * nextDelivery()
-     * Resets the timer to a new random expected time (20–40 min).
-     * Points are KEPT — only the clock resets.
-     */
     function nextDelivery() {
-      // Pick random expected time between 20 and 40 minutes
-      const newMinutes = Math.floor(Math.random() * 21) + 20; // 20–40
+      const newMinutes = Math.floor(Math.random() * 21) + 20;
       expectedSecs  = newMinutes * 60;
       remainingSecs = newMinutes * 60;
-
-      // Update the expected time label
       document.getElementById('expected-label').textContent = newMinutes + ' min';
-
-      // Update delivery number label
       document.getElementById('delivery-num').textContent =
         `Current Delivery #${deliveryCount + 1}`;
-
-      // Reset the timer display and bar
       updateTimerDisplay();
       document.getElementById('timer-bar').style.width = '100%';
       document.getElementById('timer-bar').className = 'timer-bar';
       document.getElementById('timer-display').className = 'timer-display';
-
-      // Hide "Next Delivery" button again
       document.getElementById('next-btn').style.display = 'none';
-
-      // Start the new countdown
       clearInterval(timerInterval);
       startTimer();
     }
 
-    /**
-     * updatePointsUI()
-     * Refreshes the points total, progress bar, delivery count,
-     * and fires the reward banner if the threshold is crossed.
-     */
     function updatePointsUI() {
-      // Points number
       document.getElementById('pts-value').textContent = totalPoints;
-
-      // Delivery count
       document.getElementById('delivery-count').textContent = deliveryCount;
-
-      // Progress bar (caps at 100%)
       const pct = Math.min((totalPoints / THRESHOLD) * 100, 100);
       document.getElementById('progress-fill').style.width = pct + '%';
       document.getElementById('progress-label').textContent =
         `${totalPoints} / ${THRESHOLD} pts`;
-
-      // Fire reward banner exactly once when threshold is crossed
       if (totalPoints >= THRESHOLD && !rewardUnlocked) {
         rewardUnlocked = true;
         document.getElementById('reward-banner').style.display = 'block';
       }
     }
 
-    /**
-     * addHistoryEntry(label, pts)
-     * Prepends a new row to the delivery history log.
-     * If this is the first entry, clears the placeholder text.
-     */
     function addHistoryEntry(label, pts) {
       const log = document.getElementById('history-log');
-
-      // Remove "no deliveries yet" placeholder on first entry
       if (deliveryCount === 1) log.innerHTML = '';
-
       const now  = new Date();
       const time = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-
       const entry = document.createElement('div');
       entry.className = 'history-entry';
       entry.innerHTML =
         `<span>${label} <em style="color:#718096;font-size:0.68rem">${time}</em></span>` +
         `<span class="hpts">${pts > 0 ? '+' + pts : '0'} pts</span>`;
-
       log.insertBefore(entry, log.firstChild);
+    }
+
+
+    // ============================================================
+    // FEATURE 3 — SMART KPT MANAGEMENT SYSTEM (NEW)
+    // All KPT state variables and functions are prefixed with "kpt"
+    // to ensure zero interference with Features 1 & 2.
+    // ============================================================
+
+    /**
+     * BASE PREP TIMES in seconds for each dish.
+     * Used as the starting point for the KPT formula.
+     */
+    const KPT_BASE_TIMES = {
+      roasted_chicken: 300,   // 5 minutes
+      butter_chicken:  480,   // 8 minutes
+      paneer_tikka:    360,   // 6 minutes
+      biryani:         600,   // 10 minutes
+    };
+
+    /**
+     * KPT STATE
+     * kptActiveSecs  — the "live" KPT value used by the countdown timer.
+     *                  Set from predicted OR chef override.
+     * kptTotalSecs   — stores the full duration when the timer was started
+     *                  (needed to calculate the drain bar percentage).
+     * kptRemaining   — current countdown value in seconds.
+     * kptInterval    — reference to setInterval for the KPT countdown.
+     * kptRunning     — true while timer is ticking.
+     * kptPaused      — true when paused (distinct from "not started yet").
+     */
+    let kptActiveSecs = 300;   // default: Roasted Chicken base
+    let kptTotalSecs  = 300;
+    let kptRemaining  = 300;
+    let kptInterval   = null;
+    let kptRunning    = false;
+    let kptPaused     = false;
+
+    /**
+     * kptSecsToDisplay(secs)
+     * Converts a raw seconds number into "MM:SS" string.
+     */
+    function kptSecsToDisplay(secs) {
+      const s = Math.max(0, Math.round(secs));
+      const m = Math.floor(s / 60);
+      const r = s % 60;
+      return String(m).padStart(2, '0') + ':' + String(r).padStart(2, '0');
+    }
+
+    /**
+     * kptSliderUpdate()
+     * Syncs the load percentage label to the slider thumb position.
+     */
+    function kptSliderUpdate() {
+      const val = document.getElementById('kpt-load-slider').value;
+      document.getElementById('kpt-load-val').textContent = val + '%';
+    }
+
+    /**
+     * kptCalculate()
+     * Core KPT formula:
+     *   1. Get base time for selected dish
+     *   2. Apply -20% if last dish matches (equipment already warm)
+     *   3. Apply +25% if load > 70% (kitchen overloaded)
+     *   4. Apply +30% if peak hours toggle is ON
+     *
+     * Updates the predicted display, formula breakdown,
+     * chef override preview, and syncs timer if NOT running.
+     */
+    function kptCalculate() {
+      const dish     = document.getElementById('kpt-dish').value;
+      const lastDish = document.getElementById('kpt-last-dish').value;
+      const load     = parseInt(document.getElementById('kpt-load-slider').value, 10);
+      const isPeak   = document.getElementById('kpt-peak-toggle').checked;
+
+      // Update peak toggle label
+      document.getElementById('kpt-peak-state').textContent = isPeak ? 'ON' : 'OFF';
+
+      // Step 1: base time
+      let base = KPT_BASE_TIMES[dish];
+
+      // Step 2: match discount (same dish was just made → equipment warm)
+      const isMatch = (lastDish !== 'none' && lastDish === dish);
+      const matchFactor = isMatch ? 0.80 : 1.00;  // 0.80 = reduce by 20%
+
+      // Step 3: load factor
+      const loadFactor = load > 70 ? 1.25 : 1.00;  // 1.25 = add 25%
+
+      // Step 4: peak factor
+      const peakFactor = isPeak ? 1.30 : 1.00;     // 1.30 = add 30%
+
+      // Final KPT in seconds
+      const kptSecs = Math.round(base * matchFactor * loadFactor * peakFactor);
+
+      // Update predicted display (Section A)
+      const display = kptSecsToDisplay(kptSecs);
+      document.getElementById('kpt-predicted-display').textContent = display;
+
+      // Update formula breakdown text
+      document.getElementById('kpt-formula-detail').innerHTML =
+        `Base: ${base}s` +
+        (isMatch  ? ` × 0.80 (match−20%)` : ` × 1.00`) +
+        (load > 70 ? ` × 1.25 (load+25%)` : ` × 1.00`) +
+        (isPeak   ? ` × 1.30 (peak+30%)` : ` × 1.00`) +
+        ` = <strong style="color:#00b4d8">${kptSecs}s</strong>`;
+
+      // Update chef preview in Section B
+      document.getElementById('kpt-chef-predicted-val').textContent = display;
+
+      // Update active KPT if timer has NOT been started yet
+      // (once started, only chef save or reset changes the timer)
+      if (!kptRunning && !kptPaused) {
+        kptActiveSecs = kptSecs;
+        kptTotalSecs  = kptSecs;
+        kptRemaining  = kptSecs;
+        kptUpdateTimerDisplay();
+      }
+    }
+
+    /**
+     * kptUpdateTimerDisplay()
+     * Writes current kptRemaining to the big timer clock and updates
+     * the drain bar. Called every second while running + on reset.
+     */
+    function kptUpdateTimerDisplay() {
+      const displayEl = document.getElementById('kpt-big-timer');
+      const barEl     = document.getElementById('kpt-timer-bar');
+
+      if (kptRemaining <= 0) {
+        // Timer finished: show 00:00 and "ORDER READY" message
+        displayEl.textContent = '00:00';
+        displayEl.className   = 'kpt-big-timer kpt-done';
+        barEl.style.width     = '0%';
+        barEl.className       = 'kpt-timer-bar';
+        document.getElementById('kpt-timer-status').textContent = '🟢 ORDER READY FOR PICKUP!';
+        document.getElementById('kpt-timer-status').className   = 'kpt-timer-status ready';
+        document.getElementById('kpt-start-btn').textContent    = '▶ START PREPARATION';
+        document.getElementById('kpt-start-btn').disabled       = false;
+        kptRunning = false;
+        kptPaused  = false;
+        clearInterval(kptInterval);
+      } else {
+        displayEl.textContent = kptSecsToDisplay(kptRemaining);
+
+        // Colour: red (urgent) when under 60 seconds
+        const isUrgent = kptRemaining <= 60;
+        displayEl.className = 'kpt-big-timer' + (isUrgent ? ' kpt-urgent' : '');
+
+        // Drain bar percentage
+        const pct = kptTotalSecs > 0 ? (kptRemaining / kptTotalSecs) * 100 : 100;
+        barEl.style.width = pct + '%';
+        barEl.className   = 'kpt-timer-bar' + (isUrgent ? ' kpt-urgent' : '');
+      }
+    }
+
+    /**
+     * kptTimerStart()
+     * Starts (or resumes from pause) the KPT countdown.
+     * Disables the START button while running.
+     */
+    function kptTimerStart() {
+      if (kptRunning) return;  // prevent double-start
+
+      // If starting fresh (not resuming from pause), sync from active KPT
+      if (!kptPaused) {
+        kptRemaining = kptActiveSecs;
+        kptTotalSecs = kptActiveSecs;
+      }
+
+      kptRunning = true;
+      kptPaused  = false;
+
+      document.getElementById('kpt-start-btn').disabled    = true;
+      document.getElementById('kpt-start-btn').textContent = '▶ Running...';
+      document.getElementById('kpt-timer-status').textContent = '⏱ Preparation in progress...';
+      document.getElementById('kpt-timer-status').className   = 'kpt-timer-status';
+
+      // Tick every second
+      kptInterval = setInterval(() => {
+        if (!kptRunning) { clearInterval(kptInterval); return; }
+        kptRemaining--;
+        kptUpdateTimerDisplay();
+      }, 1000);
+    }
+
+    /**
+     * kptTimerPause()
+     * Pauses the running countdown. "Resume" re-uses kptTimerStart().
+     */
+    function kptTimerPause() {
+      if (!kptRunning) return;
+      kptRunning = false;
+      kptPaused  = true;
+      clearInterval(kptInterval);
+      document.getElementById('kpt-start-btn').disabled    = false;
+      document.getElementById('kpt-start-btn').textContent = '▶ Resume';
+      document.getElementById('kpt-timer-status').textContent = '⏸ Paused';
+    }
+
+    /**
+     * kptTimerReset()
+     * Resets the timer back to the current active KPT (predicted or chef's).
+     * Also re-enables the START button.
+     */
+    function kptTimerReset() {
+      kptRunning = false;
+      kptPaused  = false;
+      clearInterval(kptInterval);
+
+      kptRemaining = kptActiveSecs;
+      kptTotalSecs = kptActiveSecs;
+
+      document.getElementById('kpt-big-timer').className   = 'kpt-big-timer';
+      document.getElementById('kpt-start-btn').disabled    = false;
+      document.getElementById('kpt-start-btn').textContent = '▶ START PREPARATION';
+      document.getElementById('kpt-timer-status').textContent = 'Press START to begin';
+      document.getElementById('kpt-timer-status').className   = 'kpt-timer-status';
+      document.getElementById('kpt-timer-bar').className      = 'kpt-timer-bar';
+
+      kptUpdateTimerDisplay();
+    }
+
+    /**
+     * kptFormatInput(el)
+     * Auto-inserts the colon after 2 digits so the chef doesn't need to
+     * type it — "0730" becomes "07:30" automatically.
+     */
+    function kptFormatInput(el) {
+      let v = el.value.replace(/[^0-9]/g, '');  // strip non-digits
+      if (v.length > 2) {
+        v = v.substring(0, 2) + ':' + v.substring(2, 4);
+      }
+      el.value = v;
+    }
+
+    /**
+     * kptChefUpdate()
+     * "UPDATE" button — previews the chef's typed value in the
+     * confirmation message box without saving to timer yet.
+     */
+    function kptChefUpdate() {
+      const raw = document.getElementById('kpt-chef-input').value.trim();
+      const secs = kptParseMMSS(raw);
+      if (secs === null) {
+        alert('Please enter time in MM:SS format, e.g. 07:30');
+        return;
+      }
+      // Show the preview message
+      document.getElementById('kpt-chef-saved-val').textContent = kptSecsToDisplay(secs);
+      document.getElementById('kpt-chef-msg').style.display = 'block';
+      document.getElementById('kpt-chef-msg').style.color = '#ffd93d';
+      document.getElementById('kpt-chef-msg').innerHTML =
+        `⚠️ Preview: KPT will be set to <strong>${kptSecsToDisplay(secs)}</strong> — press 💾 Save to confirm`;
+    }
+
+    /**
+     * kptChefCancel()
+     * "CANCEL" button — clears the input and hides any message.
+     */
+    function kptChefCancel() {
+      document.getElementById('kpt-chef-input').value = '';
+      document.getElementById('kpt-chef-msg').style.display = 'none';
+    }
+
+    /**
+     * kptChefSave()
+     * "SAVE" button — commits the chef override:
+     *  1. Parses MM:SS input
+     *  2. Updates kptActiveSecs (the master KPT value)
+     *  3. Resets the countdown timer to the new value
+     *  4. Shows confirmation message
+     */
+    function kptChefSave() {
+      const raw  = document.getElementById('kpt-chef-input').value.trim();
+      const secs = kptParseMMSS(raw);
+      if (secs === null) {
+        alert('Please enter time in MM:SS format, e.g. 07:30');
+        return;
+      }
+
+      // Commit to active KPT
+      kptActiveSecs = secs;
+
+      // Reset the countdown to reflect the chef override
+      kptTimerReset();
+
+      // Show green confirmation message
+      const msgEl = document.getElementById('kpt-chef-msg');
+      msgEl.style.display = 'block';
+      msgEl.style.color   = '#6bcb77';
+      document.getElementById('kpt-chef-saved-val').textContent = kptSecsToDisplay(secs);
+      msgEl.innerHTML =
+        `✅ KPT manually updated by chef to <strong id="kpt-chef-saved-val">${kptSecsToDisplay(secs)}</strong>`;
+
+      // Clear input
+      document.getElementById('kpt-chef-input').value = '';
+    }
+
+    /**
+     * kptParseMMSS(str)
+     * Parses a "MM:SS" string into total seconds.
+     * Returns null if the format is invalid.
+     */
+    function kptParseMMSS(str) {
+      const parts = str.split(':');
+      if (parts.length !== 2) return null;
+      const m = parseInt(parts[0], 10);
+      const s = parseInt(parts[1], 10);
+      if (isNaN(m) || isNaN(s) || s < 0 || s > 59 || m < 0) return null;
+      return m * 60 + s;
     }
 
 
     // ============================================================
     // BOOT — Run once when page loads
     // ============================================================
-    render();       // draw the outlet cards (Feature 1)
-    startTimer();   // begin the first delivery countdown (Feature 2)
+    render();          // Feature 1: draw outlet cards
+    startTimer();      // Feature 2: begin delivery countdown
+    kptCalculate();    // Feature 3: run initial KPT calculation & display
 
   </script>
 
