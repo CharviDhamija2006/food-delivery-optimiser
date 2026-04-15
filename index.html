@@ -3,1263 +3,1035 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>QuickBite — Delivery Optimization Dashboard</title>
+  <title>QuickBite — Role-Based Delivery Dashboard</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
-  <!-- ============================================================
-       GLOBAL STYLES
-       Sets up the overall page look: colors, fonts, layout grid
-  ============================================================ -->
   <style>
-    /* Reset & base */
+    /* ============================================================
+       RESET & BASE
+    ============================================================ */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       font-family: 'Inter', sans-serif;
-      /* Gradient background — dark purple to deep blue */
-      background: linear-gradient(135deg, #1a0533 0%, #0d1b4b 50%, #0a2640 100%);
       min-height: 100vh;
       color: #f0f0f0;
-      padding: 24px 16px;
+      transition: background 0.5s ease;
     }
 
-    /* Top header bar */
-    .header {
-      text-align: center;
-      margin-bottom: 28px;
+    /* ============================================================
+       BODY THEMES — switched by JS when role is selected
+       .theme-welcome  -> neutral dark gradient (welcome screen)
+       .theme-chef     -> warm orange/peach gradient  (STEP 5)
+       .theme-driver   -> cool blue gradient           (STEP 5)
+    ============================================================ */
+    body.theme-welcome {
+      background: linear-gradient(135deg, #1a0533 0%, #0d1b4b 50%, #0a2640 100%);
     }
-    .header h1 {
-      font-size: 2rem;
-      font-weight: 700;
-      background: linear-gradient(90deg, #ff6b6b, #ffd93d, #6bcb77);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      letter-spacing: -0.5px;
+    body.theme-chef {
+      background: linear-gradient(135deg, #2d0e00 0%, #6b2500 45%, #a03800 100%);
     }
-    .header p {
-      color: #a0aec0;
-      font-size: 0.9rem;
-      margin-top: 4px;
+    body.theme-driver {
+      background: linear-gradient(135deg, #001830 0%, #0d1b4b 50%, #083060 100%);
     }
 
-    /* Two-column layout for desktop; stacks on mobile */
-    .dashboard {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 24px;
-      max-width: 1100px;
-      margin: 0 auto;
-    }
-
-    /* Full-width row for KPT panel below */
-    .dashboard-full {
-      max-width: 1100px;
-      margin: 24px auto 0;
-    }
-
-    /* Each panel / card */
-    .panel {
-      background: rgba(255, 255, 255, 0.07);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      border-radius: 20px;
-      padding: 24px;
-      backdrop-filter: blur(12px);
-    }
-
-    /* Panel title row */
-    .panel-title {
+    /* ============================================================
+       STEP 1: MENU BAR — dark grey, always visible at top
+    ============================================================ */
+    #menu-bar {
+      position: sticky;
+      top: 0;
+      z-index: 200;
       display: flex;
       align-items: center;
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-    .panel-title .icon {
-      width: 36px; height: 36px;
-      border-radius: 10px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 18px;
-    }
-    .icon-orange { background: linear-gradient(135deg, #ff6b35, #f7931e); }
-    .icon-purple { background: linear-gradient(135deg, #7b2ff7, #f107a3); }
-    /* NEW: teal icon for KPT panel */
-    .icon-teal   { background: linear-gradient(135deg, #00b4d8, #0077b6); }
-
-    .panel-title h2 {
-      font-size: 1.05rem;
-      font-weight: 600;
+      justify-content: space-between;
+      background: #1c1c1e;
       color: #fff;
+      padding: 0 24px;
+      height: 58px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.55);
     }
-    .panel-title span.badge {
-      font-size: 0.7rem;
-      background: rgba(255,255,255,0.15);
+
+    .menu-brand {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .menu-brand .dot { width: 8px; height: 8px; border-radius: 50%; background: #ff6b35; }
+
+    .menu-roles { display: flex; gap: 8px; align-items: center; }
+
+    /* CHEF / DRIVER buttons in the menu bar */
+    .menu-role-btn {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.18);
       color: #ccc;
-      padding: 2px 8px;
-      border-radius: 20px;
+      padding: 7px 18px;
+      border-radius: 8px;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .menu-role-btn:hover { background: rgba(255,255,255,0.16); color: #fff; }
+    /* Active highlights */
+    .menu-role-btn.active-chef   { background: linear-gradient(135deg,#ff6b35,#f7931e); border-color: transparent; color: #fff; }
+    .menu-role-btn.active-driver { background: linear-gradient(135deg,#1a5fd4,#4d8df5); border-color: transparent; color: #fff; }
+
+    /* LOGOUT button — right side */
+    #logout-btn {
+      display: none;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.18);
+      color: #ccc;
+      padding: 7px 14px;
+      border-radius: 8px;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    #logout-btn:hover { background: rgba(255,80,80,0.2); color: #ff6b6b; border-color: rgba(255,80,80,0.3); }
+
+    #active-user-badge {
+      display: none;
+      font-size: 0.75rem;
+      color: #a0aec0;
+      margin-right: 8px;
     }
 
-    /* Dropdown selector */
+    /* ============================================================
+       STEP 1: WELCOME SCREEN
+    ============================================================ */
+    #welcome-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: calc(100vh - 58px);
+      padding: 40px 16px;
+      text-align: center;
+      animation: fadeIn 0.5s ease;
+    }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+
+    .welcome-logo { font-size: 4rem; margin-bottom: 16px; animation: bounceIn 0.6s ease; }
+    @keyframes bounceIn { 0%{transform:scale(0.5);opacity:0;} 70%{transform:scale(1.1);} 100%{transform:scale(1);opacity:1;} }
+
+    .welcome-title {
+      font-size: 2.2rem; font-weight: 700;
+      background: linear-gradient(90deg,#ff6b6b,#ffd93d,#6bcb77);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      letter-spacing: -0.5px; margin-bottom: 10px;
+    }
+    .welcome-subtitle { font-size: 1rem; color: #a0aec0; margin-bottom: 48px; max-width: 420px; }
+    .welcome-prompt   { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; color: #718096; margin-bottom: 20px; }
+
+    .welcome-cards { display: flex; gap: 24px; flex-wrap: wrap; justify-content: center; }
+    .welcome-card {
+      background: rgba(255,255,255,0.07); border: 2px solid rgba(255,255,255,0.12);
+      border-radius: 20px; padding: 36px 40px; width: 220px; cursor: pointer;
+      transition: all 0.25s; text-align: center;
+    }
+    .welcome-card:hover { transform: translateY(-6px); box-shadow: 0 16px 40px rgba(0,0,0,0.35); }
+    .welcome-card.chef-card:hover   { border-color:#ff6b35; background:rgba(255,107,53,0.12); }
+    .welcome-card.driver-card:hover { border-color:#4d8df5; background:rgba(77,141,245,0.12); }
+    .welcome-card .wc-icon  { font-size: 3rem; margin-bottom: 14px; }
+    .welcome-card .wc-title { font-size: 1.05rem; font-weight: 700; color: #fff; margin-bottom: 6px; }
+    .welcome-card .wc-desc  { font-size: 0.78rem; color: #a0aec0; line-height: 1.5; }
+
+    /* ============================================================
+       STEP 4: LOGIN MODAL
+    ============================================================ */
+    #login-modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.72); z-index: 500;
+      align-items: center; justify-content: center;
+    }
+    #login-modal-overlay.active { display: flex; animation: fadeIn 0.2s ease; }
+
+    .login-modal {
+      background: #1a1a2e; border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 20px; padding: 36px 32px; width: 100%; max-width: 380px;
+      text-align: center; animation: popIn 0.25s ease;
+    }
+    @keyframes popIn { from{transform:scale(0.88);opacity:0;} to{transform:scale(1);opacity:1;} }
+
+    .login-icon  { font-size: 2.8rem; margin-bottom: 12px; }
+    .login-title { font-size: 1.15rem; font-weight: 700; color: #fff; margin-bottom: 6px; }
+    .login-sub   { font-size: 0.82rem; color: #a0aec0; margin-bottom: 22px; line-height: 1.5; }
+
+    .login-input {
+      width: 100%; padding: 12px 16px; border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.08);
+      color: #fff; font-family: 'Inter', sans-serif; font-size: 1rem; font-weight: 600;
+      letter-spacing: 2px; text-align: center; margin-bottom: 16px; outline: none;
+      transition: border-color 0.2s;
+    }
+    .login-input:focus { border-color: #ff6b35; }
+    .login-input::placeholder { color: #4a5568; font-weight: 400; letter-spacing: 0; }
+    .login-error { font-size: 0.78rem; color: #ff6b6b; margin-bottom: 10px; min-height: 18px; }
+
+    .login-btn {
+      width: 100%; padding: 13px; border-radius: 12px; border: none;
+      font-family: 'Inter', sans-serif; font-size: 0.95rem; font-weight: 700;
+      cursor: pointer; transition: transform 0.15s; margin-bottom: 10px;
+    }
+    .login-btn:active { transform: scale(0.97); }
+    .login-btn-chef   { background: linear-gradient(135deg,#ff6b35,#f7931e); color:#fff; }
+    .login-btn-driver { background: linear-gradient(135deg,#1a5fd4,#4d8df5); color:#fff; }
+    .login-cancel {
+      width: 100%; padding: 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.12);
+      background: transparent; color: #a0aec0; font-family: 'Inter', sans-serif;
+      font-size: 0.85rem; cursor: pointer; transition: background 0.2s;
+    }
+    .login-cancel:hover { background: rgba(255,255,255,0.06); }
+
+    /* ============================================================
+       MAIN CONTENT WRAPPER
+    ============================================================ */
+    #main-content { padding: 28px 16px 40px; }
+
+    /* ============================================================
+       SHARED PANEL / CARD STYLES
+    ============================================================ */
+    .panel {
+      background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 20px; padding: 24px; backdrop-filter: blur(12px);
+    }
+    .panel-title { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+    .panel-title .icon {
+      width: 36px; height: 36px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;
+    }
+    .icon-orange { background: linear-gradient(135deg,#ff6b35,#f7931e); }
+    .icon-purple { background: linear-gradient(135deg,#7b2ff7,#f107a3); }
+    .panel-title h2    { font-size: 1.05rem; font-weight: 600; color: #fff; }
+    .panel-title .badge {
+      font-size: 0.7rem; background: rgba(255,255,255,0.15); color: #ccc;
+      padding: 2px 8px; border-radius: 20px;
+    }
+
     select {
-      width: 100%;
-      padding: 10px 14px;
-      border-radius: 10px;
-      border: 1px solid rgba(255,255,255,0.2);
-      background: rgba(255,255,255,0.1);
-      color: #fff;
-      font-size: 0.9rem;
-      font-family: 'Inter', sans-serif;
-      cursor: pointer;
-      margin-bottom: 16px;
-      appearance: none;
+      width: 100%; padding: 10px 14px; border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1);
+      color: #fff; font-size: 0.9rem; font-family: 'Inter', sans-serif; cursor: pointer;
+      margin-bottom: 16px; appearance: none;
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23ccc' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      background-position: right 14px center;
-      padding-right: 36px;
+      background-repeat: no-repeat; background-position: right 14px center; background-size: 12px; padding-right: 36px;
     }
     select option { background: #1a1a2e; color: #fff; }
 
-    /* Each outlet card */
-    .outlet-card {
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 14px;
-      padding: 14px 16px;
-      margin-bottom: 12px;
-      transition: border-color 0.3s, background 0.3s;
-      position: relative;
-    }
-    /* Highlighted card for the optimal outlet */
-    .outlet-card.optimal {
-      border-color: #6bcb77;
-      background: rgba(107, 203, 119, 0.08);
-    }
-
-    .outlet-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 10px;
-    }
-    .outlet-name {
-      font-weight: 600;
-      font-size: 0.95rem;
-      color: #fff;
-    }
-    .optimal-badge {
-      display: none; /* Hidden by default; shown only on optimal */
-      font-size: 0.65rem;
-      background: #6bcb77;
-      color: #0a2e10;
-      font-weight: 700;
-      padding: 3px 8px;
-      border-radius: 20px;
-      letter-spacing: 0.5px;
-    }
-    .outlet-card.optimal .optimal-badge { display: inline-block; }
-
-    /* 3 stats in a row inside each outlet card */
-    .outlet-stats {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-      margin-bottom: 10px;
-    }
-    .stat-box {
-      background: rgba(255,255,255,0.06);
-      border-radius: 8px;
-      padding: 8px 6px;
-      text-align: center;
-    }
-    .stat-box .label {
-      font-size: 0.62rem;
-      color: #a0aec0;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    .stat-box .value {
-      font-size: 1rem;
-      font-weight: 600;
-      color: #fff;
-      margin-top: 2px;
-    }
-
-    /* Load bar (shows kitchen load visually) */
-    .load-bar-wrap {
-      height: 5px;
-      background: rgba(255,255,255,0.1);
-      border-radius: 99px;
-      overflow: hidden;
-      margin-top: 6px;
-    }
-    .load-bar {
-      height: 100%;
-      border-radius: 99px;
-      transition: width 0.5s ease;
-    }
-
-    /* Fulfillment time at bottom of each outlet card */
-    .fulfillment {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-top: 8px;
-    }
-    .fulfillment .fkey { font-size: 0.72rem; color: #a0aec0; }
-    .fulfillment .fval { font-size: 0.85rem; font-weight: 600; color: #ffd93d; }
-
-    /* Explanation box below the outlet cards */
-    .why-box {
-      background: rgba(107, 203, 119, 0.1);
-      border: 1px solid rgba(107, 203, 119, 0.3);
-      border-radius: 12px;
-      padding: 12px 14px;
-      font-size: 0.82rem;
-      color: #b8f5be;
-      line-height: 1.5;
-      margin-bottom: 14px;
-    }
-
-    /* Action button */
     .btn {
-      width: 100%;
-      padding: 12px;
-      border-radius: 12px;
-      border: none;
-      font-family: 'Inter', sans-serif;
-      font-size: 0.9rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: transform 0.15s, opacity 0.15s;
+      width: 100%; padding: 12px; border-radius: 12px; border: none;
+      font-family: 'Inter', sans-serif; font-size: 0.9rem; font-weight: 600;
+      cursor: pointer; transition: transform 0.15s, opacity 0.15s;
     }
     .btn:active { transform: scale(0.97); opacity: 0.85; }
-    .btn-orange {
-      background: linear-gradient(135deg, #ff6b35, #f7931e);
-      color: #fff;
-    }
-    .btn-purple {
-      background: linear-gradient(135deg, #7b2ff7, #f107a3);
-      color: #fff;
-    }
-    /* NEW: teal button for KPT actions */
-    .btn-teal {
-      background: linear-gradient(135deg, #00b4d8, #0077b6);
-      color: #fff;
-    }
-    .btn-sm {
-      width: auto;
-      padding: 8px 18px;
-      font-size: 0.82rem;
-      border-radius: 10px;
-    }
-    .btn-gray {
-      background: rgba(255,255,255,0.12);
-      color: #ccc;
-      border: 1px solid rgba(255,255,255,0.15);
-    }
+    .btn-orange { background: linear-gradient(135deg,#ff6b35,#f7931e); color:#fff; }
+    .btn-purple { background: linear-gradient(135deg,#7b2ff7,#f107a3); color:#fff; }
+    .btn-sm { width: auto; padding: 8px 18px; font-size: 0.82rem; border-radius: 10px; }
+    .btn-gray { background: rgba(255,255,255,0.12); color: #ccc; border: 1px solid rgba(255,255,255,0.15); }
     .btn + .btn { margin-top: 8px; }
 
     /* ============================================================
-       FEATURE 2: AUTOMATIC DELIVERY TRACKER STYLES
+       DASHBOARD ROLE HEADER BAR
     ============================================================ */
-
-    /* Partner profile row */
-    .partner-row {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      margin-bottom: 20px;
+    .dash-header {
+      max-width: 1100px; margin: 0 auto 24px; padding: 18px 24px; border-radius: 16px;
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
     }
-    .avatar {
-      width: 52px; height: 52px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #7b2ff7, #f107a3);
-      display: flex; align-items: center; justify-content: center;
-      font-weight: 700; font-size: 1.3rem; color: #fff;
-      flex-shrink: 0;
-    }
-    .partner-info h3 { font-size: 1rem; font-weight: 600; color: #fff; }
-    .partner-info p  { font-size: 0.78rem; color: #a0aec0; margin-top: 2px; }
-
-    /* Active delivery card — the main timer block */
-    .delivery-card {
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.14);
-      border-radius: 16px;
-      padding: 18px;
-      margin-bottom: 16px;
-      text-align: center;
-    }
-    .delivery-meta {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 14px;
-    }
-    .delivery-num {
-      font-size: 0.78rem;
-      font-weight: 600;
-      color: #a0aec0;
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-    }
-    .delivery-expected {
-      font-size: 0.75rem;
-      color: #718096;
-    }
-    .delivery-expected span {
-      color: #ffd93d;
-      font-weight: 600;
-    }
-
-    /* Big countdown clock */
-    .timer-display {
-      font-size: 3.2rem;
-      font-weight: 700;
-      letter-spacing: 2px;
-      color: #fff;
-      line-height: 1;
-      margin: 8px 0 4px;
-      font-variant-numeric: tabular-nums;
-      transition: color 0.4s;
-    }
-    .timer-display.urgent { color: #ff6b6b; }
-    .timer-display.done   { color: #a0aec0; }
-
-    .timer-label {
-      font-size: 0.7rem;
-      color: #718096;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-bottom: 14px;
-    }
-
-    /* Thin animated bar showing time consumed */
-    .timer-track {
-      height: 6px;
-      background: rgba(255,255,255,0.1);
-      border-radius: 99px;
-      overflow: hidden;
-      margin-bottom: 16px;
-    }
-    .timer-bar {
-      height: 100%;
-      border-radius: 99px;
-      background: linear-gradient(90deg, #7b2ff7, #f107a3);
-      transition: width 1s linear, background 0.4s;
-    }
-    .timer-bar.urgent { background: linear-gradient(90deg, #ff6b35, #ff6b6b); }
-
-    /* Points summary strip */
-    .points-strip {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: rgba(255,255,255,0.05);
-      border-radius: 12px;
-      padding: 12px 16px;
-      margin-bottom: 16px;
-    }
-    .pts-left .pts-label { font-size: 0.68rem; color: #a0aec0; text-transform: uppercase; letter-spacing: 0.8px; }
-    .pts-left .pts-value {
-      font-size: 1.8rem;
-      font-weight: 700;
-      background: linear-gradient(90deg, #ffd93d, #f7931e);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      line-height: 1.1;
-    }
-    .pts-right { text-align: right; }
-    .pts-right .pts-label { font-size: 0.68rem; color: #a0aec0; text-transform: uppercase; letter-spacing: 0.8px; }
-    .pts-right .pts-count { font-size: 1rem; font-weight: 600; color: #fff; }
-
-    /* Progress bar toward 500-pt reward */
-    .progress-section { margin-bottom: 16px; }
-    .progress-header {
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.75rem;
-      color: #a0aec0;
-      margin-bottom: 7px;
-    }
-    .progress-track {
-      height: 10px;
-      background: rgba(255,255,255,0.1);
-      border-radius: 99px;
-      overflow: hidden;
-    }
-    .progress-fill {
-      height: 100%;
-      background: linear-gradient(90deg, #7b2ff7, #f107a3);
-      border-radius: 99px;
-      transition: width 0.5s ease;
-    }
-    .progress-milestones {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 5px;
-      font-size: 0.65rem;
-      color: #718096;
-    }
-
-    /* Reward unlocked animation banner */
-    .reward-banner {
-      display: none;
-      background: linear-gradient(135deg, #1a6b2a, #2d9e3f);
-      border: 1px solid #6bcb77;
-      border-radius: 12px;
-      padding: 12px 14px;
-      text-align: center;
-      margin-bottom: 14px;
-      animation: pulse 1.5s infinite;
-    }
-    @keyframes pulse {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(107,203,119,0.4); }
-      50%       { box-shadow: 0 0 0 8px rgba(107,203,119,0); }
-    }
-    .reward-banner .reward-title { font-size: 0.95rem; font-weight: 700; color: #fff; }
-    .reward-banner .reward-sub   { font-size: 0.78rem; color: #b8f5be; margin-top: 2px; }
-
-    /* Popup overlay for delivery result */
-    .popup-overlay {
-      display: none;
-      position: absolute;
-      inset: 0;
-      background: rgba(10, 10, 30, 0.82);
-      border-radius: 20px;
-      z-index: 10;
-      align-items: center;
-      justify-content: center;
-    }
-    .popup-overlay.active { display: flex; }
-    .popup-box {
-      background: #1a1040;
-      border: 1px solid rgba(255,255,255,0.18);
-      border-radius: 18px;
-      padding: 28px 24px;
-      text-align: center;
-      max-width: 280px;
-      width: 90%;
-      animation: popIn 0.25s ease;
-    }
-    @keyframes popIn {
-      from { transform: scale(0.85); opacity: 0; }
-      to   { transform: scale(1);    opacity: 1; }
-    }
-    .popup-emoji { font-size: 2.4rem; margin-bottom: 10px; }
-    .popup-title { font-size: 1.05rem; font-weight: 700; color: #fff; margin-bottom: 6px; }
-    .popup-pts   {
-      font-size: 2rem; font-weight: 700;
-      background: linear-gradient(90deg, #ffd93d, #f7931e);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      margin: 8px 0;
-    }
-    .popup-sub { font-size: 0.8rem; color: #a0aec0; line-height: 1.5; margin-bottom: 18px; }
-    .popup-close {
-      width: 100%;
-      padding: 11px;
-      border-radius: 10px;
-      border: none;
-      background: linear-gradient(135deg, #7b2ff7, #f107a3);
-      color: #fff;
-      font-family: 'Inter', sans-serif;
-      font-size: 0.9rem;
-      font-weight: 600;
-      cursor: pointer;
-    }
-
-    /* Scoring legend */
-    .scoring-legend {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 6px;
-      margin-bottom: 14px;
-    }
-    .score-tier {
-      background: rgba(255,255,255,0.05);
-      border-radius: 8px;
-      padding: 7px 10px;
-      font-size: 0.7rem;
-    }
-    .score-tier .tier-label { color: #a0aec0; }
-    .score-tier .tier-pts   { font-weight: 700; color: #ffd93d; }
-
-    /* Scrollable history log */
-    .history-log {
-      max-height: 110px;
-      overflow-y: auto;
-      background: rgba(255,255,255,0.04);
-      border-radius: 10px;
-      padding: 10px 12px;
-      margin-top: 12px;
-    }
-    .history-log::-webkit-scrollbar { width: 4px; }
-    .history-log::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 99px; }
-    .history-entry {
-      font-size: 0.73rem;
-      color: #a0aec0;
-      padding: 3px 0;
-      border-bottom: 1px solid rgba(255,255,255,0.05);
-      display: flex;
-      justify-content: space-between;
-    }
-    .history-entry:last-child { border-bottom: none; }
-    .history-entry .hpts { color: #ffd93d; font-weight: 600; }
+    .dash-header.chef-header   { background:rgba(255,107,53,0.15); border:1px solid rgba(255,107,53,0.3); }
+    .dash-header.driver-header { background:rgba(77,141,245,0.12);  border:1px solid rgba(77,141,245,0.3); }
+    .dh-left h2  { font-size: 1.2rem; font-weight: 700; color: #fff; }
+    .dh-left p   { font-size: 0.8rem; color: #a0aec0; margin-top: 3px; }
+    .dh-id-badge { font-size: 0.75rem; font-weight: 600; padding: 6px 14px; border-radius: 20px; }
+    .chef-id-badge   { background:rgba(255,107,53,0.25); color:#ff9052; border:1px solid rgba(255,107,53,0.4); }
+    .driver-id-badge { background:rgba(77,141,245,0.2);  color:#7db4ff; border:1px solid rgba(77,141,245,0.4); }
 
     /* ============================================================
-       MOBILE RESPONSIVE BREAKPOINT
-       On small screens, stack the panels vertically
+       STEP 2: CHEF VIEW
     ============================================================ */
-    @media (max-width: 720px) {
-      .dashboard { grid-template-columns: 1fr; }
-      .header h1 { font-size: 1.5rem; }
-      .kpt-grid  { grid-template-columns: 1fr !important; }
-      .kpt-section-row { flex-direction: column !important; }
-    }
+    #chef-view { display: none; animation: fadeIn 0.4s ease; }
 
-
-    /* ============================================================
-       FEATURE 3: SMART KPT MANAGEMENT SYSTEM — NEW STYLES
-       All classes prefixed with "kpt-" to avoid collisions
-    ============================================================ -->
-    */
-
-    /* Divider title between rows */
-    .section-divider {
-      text-align: center;
-      margin: 10px 0 0;
-      position: relative;
+    .chef-stats-row {
+      display: grid; grid-template-columns: repeat(3,1fr);
+      gap: 16px; max-width: 1100px; margin: 0 auto 24px;
     }
-    .section-divider::before {
-      content: '';
-      position: absolute;
-      top: 50%;
-      left: 0; right: 0;
-      height: 1px;
-      background: rgba(255,255,255,0.1);
+    .chef-stat-card {
+      background: rgba(255,255,255,0.07); border: 1px solid rgba(255,107,53,0.25);
+      border-radius: 16px; padding: 20px; text-align: center; backdrop-filter: blur(10px);
     }
-    .section-divider span {
-      position: relative;
-      background: transparent;
-      font-size: 0.72rem;
-      color: #718096;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      padding: 0 12px;
-    }
+    .cs-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 1.5px; color: #a0aec0; margin-bottom: 8px; }
+    .cs-value { font-size: 2rem; font-weight: 700; color: #ff9052; line-height: 1; }
+    .cs-unit  { font-size: 0.72rem; color: #718096; margin-top: 4px; }
 
-    /* The KPT panel itself uses .panel (reused) + full width */
+    .chef-kpt-wrap { max-width: 1100px; margin: 0 auto; }
+
     .kpt-panel {
-      background: rgba(255, 255, 255, 0.07);
-      border: 1px solid rgba(0, 180, 216, 0.25);
-      border-radius: 20px;
-      padding: 28px 28px 24px;
-      backdrop-filter: blur(12px);
-      position: relative;
-      overflow: hidden;
+      background: rgba(255,255,255,0.07); border: 1px solid rgba(255,107,53,0.2);
+      border-radius: 20px; padding: 28px; backdrop-filter: blur(12px);
+      position: relative; overflow: hidden;
     }
-    /* Subtle glow accent in top-right corner */
     .kpt-panel::before {
-      content: '';
-      position: absolute;
-      top: -60px; right: -60px;
-      width: 200px; height: 200px;
-      background: radial-gradient(circle, rgba(0,180,216,0.12) 0%, transparent 70%);
-      pointer-events: none;
+      content:''; position:absolute; top:-60px; right:-60px; width:200px; height:200px;
+      background: radial-gradient(circle,rgba(255,107,53,0.1) 0%,transparent 70%); pointer-events:none;
     }
 
-    /* 4-column grid inside KPT panel for the 4 sections */
-    .kpt-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr 1fr;
-      gap: 20px;
-      margin-top: 20px;
-    }
+    /* 3-col grid: Prediction | Chef Form | Live Timer */
+    .kpt-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-top: 20px; }
 
-    /* Section heading inside KPT */
     .kpt-section-label {
-      font-size: 0.65rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      color: #00b4d8;
-      margin-bottom: 12px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
+      font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px;
+      color: #ff9052; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;
     }
-    .kpt-section-label::after {
-      content: '';
-      flex: 1;
-      height: 1px;
-      background: rgba(0,180,216,0.25);
-    }
+    .kpt-section-label::after { content:''; flex:1; height:1px; background:rgba(255,107,53,0.25); }
 
-    /* Shared inner card style for each sub-section */
-    .kpt-card {
-      background: rgba(0,180,216,0.05);
-      border: 1px solid rgba(0,180,216,0.15);
-      border-radius: 14px;
-      padding: 16px;
-      height: 100%;
-    }
+    .kpt-card { background: rgba(255,107,53,0.06); border: 1px solid rgba(255,107,53,0.18); border-radius: 14px; padding: 16px; }
 
-    /* Label above any input/select inside KPT */
-    .kpt-label {
-      font-size: 0.72rem;
-      color: #a0aec0;
-      margin-bottom: 5px;
-      display: block;
-    }
+    .kpt-label { font-size: 0.72rem; color: #a0aec0; margin-bottom: 5px; display: block; }
 
-    /* KPT-specific select (inherits global but overrides margin) */
-    .kpt-select {
-      margin-bottom: 12px;
-    }
-
-    /* Slider row */
-    .kpt-slider-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 12px;
-    }
+    .kpt-slider-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
     .kpt-slider-row input[type=range] {
-      flex: 1;
-      -webkit-appearance: none;
-      appearance: none;
-      height: 5px;
-      border-radius: 99px;
-      background: rgba(255,255,255,0.15);
-      outline: none;
-      cursor: pointer;
+      flex: 1; -webkit-appearance: none; appearance: none; height: 5px;
+      border-radius: 99px; background: rgba(255,255,255,0.15); outline: none; cursor: pointer;
     }
     .kpt-slider-row input[type=range]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 16px; height: 16px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #00b4d8, #0077b6);
-      cursor: pointer;
+      -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%;
+      background: linear-gradient(135deg,#ff6b35,#f7931e); cursor: pointer;
     }
-    .kpt-slider-val {
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: #00b4d8;
-      min-width: 36px;
-      text-align: right;
-    }
+    .kpt-slider-val { font-size: 0.8rem; font-weight: 600; color: #ff9052; min-width: 36px; text-align: right; }
 
-    /* Toggle (peak hours YES/NO) */
-    .kpt-toggle-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 14px;
-    }
-    .kpt-toggle {
-      position: relative;
-      width: 44px;
-      height: 24px;
-      flex-shrink: 0;
-    }
-    .kpt-toggle input { opacity: 0; width: 0; height: 0; }
-    .kpt-toggle-slider {
-      position: absolute;
-      inset: 0;
-      background: rgba(255,255,255,0.15);
-      border-radius: 99px;
-      cursor: pointer;
-      transition: background 0.3s;
-    }
-    .kpt-toggle-slider::before {
-      content: '';
-      position: absolute;
-      left: 3px; top: 3px;
-      width: 18px; height: 18px;
-      border-radius: 50%;
-      background: #fff;
-      transition: transform 0.3s;
-    }
-    .kpt-toggle input:checked + .kpt-toggle-slider { background: #00b4d8; }
-    .kpt-toggle input:checked + .kpt-toggle-slider::before { transform: translateX(20px); }
+    .kpt-toggle-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+    .kpt-toggle { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
+    .kpt-toggle input { opacity:0; width:0; height:0; }
+    .kpt-toggle-slider { position:absolute; inset:0; background:rgba(255,255,255,0.15); border-radius:99px; cursor:pointer; transition:background 0.3s; }
+    .kpt-toggle-slider::before { content:''; position:absolute; left:3px; top:3px; width:18px; height:18px; border-radius:50%; background:#fff; transition:transform 0.3s; }
+    .kpt-toggle input:checked + .kpt-toggle-slider { background:#ff6b35; }
+    .kpt-toggle input:checked + .kpt-toggle-slider::before { transform:translateX(20px); }
     .kpt-toggle-label { font-size: 0.82rem; color: #e2e8f0; }
-    .kpt-toggle-state { font-size: 0.75rem; font-weight: 700; color: #00b4d8; }
+    .kpt-toggle-state { font-size: 0.75rem; font-weight: 700; color: #ff9052; }
 
-    /* The predicted KPT result box in Section A */
     .kpt-result-box {
-      background: rgba(0,180,216,0.1);
-      border: 1px solid rgba(0,180,216,0.35);
-      border-radius: 10px;
-      padding: 12px 14px;
-      margin-top: 8px;
-      text-align: center;
+      background: rgba(255,107,53,0.12); border: 1px solid rgba(255,107,53,0.4);
+      border-radius: 10px; padding: 12px 14px; margin-top: 8px; text-align: center;
     }
-    .kpt-result-box .kpt-result-label {
-      font-size: 0.67rem;
-      color: #7dd3fc;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-bottom: 4px;
-    }
-    .kpt-result-box .kpt-result-time {
-      font-size: 1.9rem;
-      font-weight: 700;
-      color: #00b4d8;
-      font-variant-numeric: tabular-nums;
-      letter-spacing: 2px;
-    }
+    .kpt-result-label { font-size: 0.67rem; color: #ffa07a; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+    .kpt-result-time  { font-size: 1.9rem; font-weight: 700; color: #ff9052; font-variant-numeric: tabular-nums; letter-spacing: 2px; }
+
     .kpt-formula-box {
-      background: rgba(255,255,255,0.04);
-      border-radius: 8px;
-      padding: 8px 10px;
-      font-size: 0.65rem;
-      color: #718096;
-      font-family: monospace;
-      margin-top: 8px;
-      line-height: 1.6;
-      border: 1px solid rgba(255,255,255,0.07);
+      background: rgba(255,255,255,0.04); border-radius: 8px; padding: 8px 10px;
+      font-size: 0.65rem; color: #718096; font-family: monospace; margin-top: 8px;
+      line-height: 1.6; border: 1px solid rgba(255,255,255,0.07);
     }
 
-    /* Section B: Chef manual input */
-    .kpt-chef-current {
-      background: rgba(255,255,255,0.05);
-      border-radius: 10px;
-      padding: 10px 12px;
-      font-size: 0.82rem;
-      color: #a0aec0;
-      margin-bottom: 12px;
-    }
-    .kpt-chef-current strong { color: #00b4d8; }
+    /* Ready-for-pickup queue */
+    .kpt-queue { max-height: 120px; overflow-y: auto; background: rgba(255,255,255,0.04); border-radius: 10px; padding: 8px 12px; margin-bottom: 12px; }
+    .kpt-queue::-webkit-scrollbar { width: 4px; }
+    .kpt-queue::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 99px; }
+    .kpt-queue-empty { font-size: 0.75rem; color: #718096; font-style: italic; text-align: center; padding: 6px 0; }
+    .kpt-queue-item { display:flex; justify-content:space-between; align-items:center; font-size:0.78rem; color:#e2e8f0; padding:5px 0; border-bottom:1px solid rgba(255,255,255,0.06); }
+    .kpt-queue-item:last-child { border-bottom: none; }
+    .qi-ready { font-size:0.68rem; font-weight:700; color:#6bcb77; background:rgba(107,203,119,0.15); padding:2px 8px; border-radius:20px; }
+
+    .kpt-chef-current { background:rgba(255,255,255,0.05); border-radius:10px; padding:10px 12px; font-size:0.82rem; color:#a0aec0; margin-bottom:12px; }
+    .kpt-chef-current strong { color: #ff9052; }
 
     .kpt-input {
-      width: 100%;
-      padding: 10px 12px;
-      border-radius: 10px;
-      border: 1px solid rgba(0,180,216,0.35);
-      background: rgba(255,255,255,0.07);
-      color: #fff;
-      font-size: 1rem;
-      font-family: 'Inter', sans-serif;
-      font-weight: 600;
-      letter-spacing: 2px;
-      margin-bottom: 10px;
-      outline: none;
-      transition: border-color 0.2s;
-      text-align: center;
+      width:100%; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,107,53,0.4);
+      background:rgba(255,255,255,0.07); color:#fff; font-family:'Inter',sans-serif;
+      font-size:1rem; font-weight:600; letter-spacing:2px; margin-bottom:10px; outline:none;
+      transition:border-color 0.2s; text-align:center;
     }
-    .kpt-input:focus { border-color: #00b4d8; }
-    .kpt-input::placeholder { color: #4a5568; font-weight: 400; letter-spacing: 0; }
+    .kpt-input:focus { border-color: #ff6b35; }
+    .kpt-input::placeholder { color:#4a5568; font-weight:400; letter-spacing:0; }
 
-    .kpt-btn-row {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 10px;
-    }
-    .kpt-btn-row .btn { margin-top: 0; }
+    .kpt-btn-row { display:flex; gap:8px; margin-bottom:10px; }
+    .kpt-btn-row .btn { margin-top:0; }
 
-    .kpt-chef-msg {
-      font-size: 0.78rem;
-      color: #6bcb77;
-      background: rgba(107,203,119,0.1);
-      border-radius: 8px;
-      padding: 8px 10px;
-      display: none;
-    }
-    .kpt-chef-note {
-      font-size: 0.71rem;
-      color: #718096;
-      line-height: 1.5;
-      margin-top: 10px;
-      border-top: 1px solid rgba(255,255,255,0.07);
-      padding-top: 10px;
-    }
+    .kpt-chef-msg { font-size:0.78rem; color:#6bcb77; background:rgba(107,203,119,0.1); border-radius:8px; padding:8px 10px; display:none; }
+    .kpt-chef-note { font-size:0.71rem; color:#718096; line-height:1.5; margin-top:10px; border-top:1px solid rgba(255,255,255,0.07); padding-top:10px; }
 
-    /* Section C: Live Countdown Timer */
+    /* KPT live countdown */
     .kpt-big-timer {
-      font-size: 3.8rem;
-      font-weight: 800;
-      letter-spacing: 4px;
-      font-variant-numeric: tabular-nums;
-      color: #00b4d8;
-      text-align: center;
-      margin: 8px 0 4px;
-      line-height: 1;
-      text-shadow: 0 0 30px rgba(0,180,216,0.45);
-      transition: color 0.4s, text-shadow 0.4s;
+      font-size:3.8rem; font-weight:800; letter-spacing:4px; font-variant-numeric:tabular-nums;
+      color:#ff9052; text-align:center; margin:8px 0 4px; line-height:1;
+      text-shadow:0 0 30px rgba(255,107,53,0.4); transition:color 0.4s,text-shadow 0.4s;
     }
-    .kpt-big-timer.kpt-urgent {
-      color: #ff6b6b;
-      text-shadow: 0 0 30px rgba(255,107,107,0.5);
-      animation: timerPulse 0.8s infinite;
-    }
-    .kpt-big-timer.kpt-done {
-      color: #6bcb77;
-      text-shadow: 0 0 30px rgba(107,203,119,0.5);
-      animation: none;
-    }
-    @keyframes timerPulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.7; }
-    }
-    .kpt-timer-label {
-      text-align: center;
-      font-size: 0.65rem;
-      color: #718096;
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      margin-bottom: 12px;
-    }
-    .kpt-timer-track {
-      height: 6px;
-      background: rgba(255,255,255,0.1);
-      border-radius: 99px;
-      overflow: hidden;
-      margin-bottom: 14px;
-    }
-    .kpt-timer-bar {
-      height: 100%;
-      background: linear-gradient(90deg, #00b4d8, #0077b6);
-      border-radius: 99px;
-      transition: width 1s linear, background 0.4s;
-    }
-    .kpt-timer-bar.kpt-urgent { background: linear-gradient(90deg, #ff6b35, #ff6b6b); }
-    .kpt-timer-status {
-      text-align: center;
-      font-size: 0.85rem;
-      color: #a0aec0;
-      margin-bottom: 12px;
-      min-height: 20px;
-    }
-    .kpt-timer-status.ready {
-      font-size: 1rem;
-      font-weight: 700;
-      color: #6bcb77;
-      animation: pulse 1.2s infinite;
-    }
-    .kpt-ctrl-row {
-      display: flex;
-      gap: 8px;
-      margin-top: 4px;
-    }
-    .kpt-ctrl-row .btn { margin-top: 0; flex: 1; }
+    .kpt-big-timer.kpt-urgent { color:#ff6b6b; text-shadow:0 0 30px rgba(255,107,107,0.5); animation:timerPulse 0.8s infinite; }
+    .kpt-big-timer.kpt-done   { color:#6bcb77; text-shadow:0 0 30px rgba(107,203,119,0.5); animation:none; }
+    @keyframes timerPulse { 0%,100%{opacity:1;} 50%{opacity:0.7;} }
 
-    /* Section D: Benefits */
-    .kpt-benefits-list {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
-    .kpt-benefits-list li {
-      font-size: 0.82rem;
-      color: #b8f5be;
-      padding: 8px 0;
-      border-bottom: 1px solid rgba(255,255,255,0.06);
-      line-height: 1.5;
-    }
-    .kpt-benefits-list li:last-child { border-bottom: none; }
-    .kpt-benefit-badge {
-      display: inline-block;
-      background: rgba(107,203,119,0.15);
-      border: 1px solid rgba(107,203,119,0.3);
-      border-radius: 20px;
-      padding: 3px 10px;
-      font-size: 0.68rem;
-      color: #6bcb77;
-      font-weight: 600;
-      margin-top: 10px;
-      letter-spacing: 0.5px;
+    .kpt-timer-label  { text-align:center; font-size:0.65rem; color:#718096; text-transform:uppercase; letter-spacing:1.5px; margin-bottom:12px; }
+    .kpt-timer-track  { height:6px; background:rgba(255,255,255,0.1); border-radius:99px; overflow:hidden; margin-bottom:14px; }
+    .kpt-timer-bar    { height:100%; background:linear-gradient(90deg,#ff6b35,#f7931e); border-radius:99px; transition:width 1s linear,background 0.4s; }
+    .kpt-timer-bar.kpt-urgent { background:linear-gradient(90deg,#ff6b6b,#ff3333); }
+    .kpt-timer-status { text-align:center; font-size:0.85rem; color:#a0aec0; margin-bottom:12px; min-height:20px; }
+    .kpt-timer-status.ready { font-size:1rem; font-weight:700; color:#6bcb77; }
+    .kpt-ctrl-row { display:flex; gap:8px; margin-top:4px; }
+    .kpt-ctrl-row .btn { margin-top:0; flex:1; }
+
+    /* Smart KPT helper message */
+    .kpt-smart-note {
+      margin-top:20px; padding:14px 18px;
+      background:rgba(255,107,53,0.1); border:1px solid rgba(255,107,53,0.3);
+      border-radius:12px; font-size:0.85rem; color:#ffc4a0; text-align:center; line-height:1.5;
     }
 
+    /* ============================================================
+       STEP 3: DRIVER VIEW
+    ============================================================ */
+    #driver-view { display: none; animation: fadeIn 0.4s ease; }
+
+    .driver-dashboard { display:grid; grid-template-columns:1fr 1fr; gap:24px; max-width:1100px; margin:0 auto; }
+
+    /* Outlet Reallocation styles */
+    .outlet-card { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:14px; padding:14px 16px; margin-bottom:12px; transition:border-color 0.3s,background 0.3s; }
+    .outlet-card.optimal { border-color:#6bcb77; background:rgba(107,203,119,0.08); }
+    .outlet-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+    .outlet-name { font-weight:600; font-size:0.95rem; color:#fff; }
+    .optimal-badge { display:none; font-size:0.65rem; background:#6bcb77; color:#0a2e10; font-weight:700; padding:3px 8px; border-radius:20px; letter-spacing:0.5px; }
+    .outlet-card.optimal .optimal-badge { display:inline-block; }
+    .outlet-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:10px; }
+    .stat-box { background:rgba(255,255,255,0.06); border-radius:8px; padding:8px 6px; text-align:center; }
+    .stat-box .label { font-size:0.62rem; color:#a0aec0; text-transform:uppercase; letter-spacing:0.5px; }
+    .stat-box .value { font-size:1rem; font-weight:600; color:#fff; margin-top:2px; }
+    .load-bar-wrap { height:5px; background:rgba(255,255,255,0.1); border-radius:99px; overflow:hidden; margin-top:6px; }
+    .load-bar { height:100%; border-radius:99px; transition:width 0.5s ease; }
+    .fulfillment { display:flex; justify-content:space-between; align-items:center; margin-top:8px; }
+    .fulfillment .fkey { font-size:0.72rem; color:#a0aec0; }
+    .fulfillment .fval { font-size:0.85rem; font-weight:600; color:#ffd93d; }
+    .why-box { background:rgba(107,203,119,0.1); border:1px solid rgba(107,203,119,0.3); border-radius:12px; padding:12px 14px; font-size:0.82rem; color:#b8f5be; line-height:1.5; margin-bottom:14px; }
+
+    /* Rewards Club styles */
+    .partner-row { display:flex; align-items:center; gap:14px; margin-bottom:20px; }
+    .avatar-driver { width:52px; height:52px; border-radius:50%; background:linear-gradient(135deg,#1a5fd4,#4d8df5); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:1.3rem; color:#fff; flex-shrink:0; }
+    .partner-info h3 { font-size:1rem; font-weight:600; color:#fff; }
+    .partner-info p  { font-size:0.78rem; color:#a0aec0; margin-top:2px; }
+
+    .delivery-card { background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.14); border-radius:16px; padding:18px; margin-bottom:16px; text-align:center; }
+    .delivery-meta { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+    .delivery-num  { font-size:0.78rem; font-weight:600; color:#a0aec0; text-transform:uppercase; letter-spacing:0.8px; }
+    .delivery-expected { font-size:0.75rem; color:#718096; }
+    .delivery-expected span { color:#ffd93d; font-weight:600; }
+
+    .timer-display { font-size:3.2rem; font-weight:700; letter-spacing:2px; color:#fff; line-height:1; margin:8px 0 4px; font-variant-numeric:tabular-nums; transition:color 0.4s; }
+    .timer-display.urgent { color:#ff6b6b; }
+    .timer-display.done   { color:#a0aec0; }
+    .timer-label { font-size:0.7rem; color:#718096; text-transform:uppercase; letter-spacing:1px; margin-bottom:14px; }
+    .timer-track { height:6px; background:rgba(255,255,255,0.1); border-radius:99px; overflow:hidden; margin-bottom:16px; }
+    .timer-bar   { height:100%; border-radius:99px; background:linear-gradient(90deg,#7b2ff7,#f107a3); transition:width 1s linear,background 0.4s; }
+    .timer-bar.urgent { background:linear-gradient(90deg,#ff6b35,#ff6b6b); }
+
+    .points-strip { display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.05); border-radius:12px; padding:12px 16px; margin-bottom:16px; }
+    .pts-left .pts-label { font-size:0.68rem; color:#a0aec0; text-transform:uppercase; letter-spacing:0.8px; }
+    .pts-left .pts-value { font-size:1.8rem; font-weight:700; background:linear-gradient(90deg,#ffd93d,#f7931e); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; line-height:1.1; }
+    .pts-right { text-align:right; }
+    .pts-right .pts-label { font-size:0.68rem; color:#a0aec0; text-transform:uppercase; letter-spacing:0.8px; }
+    .pts-right .pts-count { font-size:1rem; font-weight:600; color:#fff; }
+
+    .progress-section { margin-bottom:16px; }
+    .progress-header  { display:flex; justify-content:space-between; font-size:0.75rem; color:#a0aec0; margin-bottom:7px; }
+    .progress-track   { height:10px; background:rgba(255,255,255,0.1); border-radius:99px; overflow:hidden; }
+    .progress-fill    { height:100%; background:linear-gradient(90deg,#7b2ff7,#f107a3); border-radius:99px; transition:width 0.5s ease; }
+    .progress-milestones { display:flex; justify-content:space-between; margin-top:5px; font-size:0.65rem; color:#718096; }
+
+    .reward-banner { display:none; background:linear-gradient(135deg,#1a6b2a,#2d9e3f); border:1px solid #6bcb77; border-radius:12px; padding:12px 14px; text-align:center; margin-bottom:14px; animation:rewardPulse 1.5s infinite; }
+    @keyframes rewardPulse { 0%,100%{box-shadow:0 0 0 0 rgba(107,203,119,0.4);} 50%{box-shadow:0 0 0 8px rgba(107,203,119,0);} }
+    .reward-banner .reward-title { font-size:0.95rem; font-weight:700; color:#fff; }
+    .reward-banner .reward-sub   { font-size:0.78rem; color:#b8f5be; margin-top:2px; }
+
+    .panel-relative { position:relative; }
+    .popup-overlay { display:none; position:absolute; inset:0; background:rgba(10,10,30,0.82); border-radius:20px; z-index:10; align-items:center; justify-content:center; }
+    .popup-overlay.active { display:flex; }
+    .popup-box { background:#1a1040; border:1px solid rgba(255,255,255,0.18); border-radius:18px; padding:28px 24px; text-align:center; max-width:280px; width:90%; animation:popIn 0.25s ease; }
+    .popup-emoji { font-size:2.4rem; margin-bottom:10px; }
+    .popup-title { font-size:1.05rem; font-weight:700; color:#fff; margin-bottom:6px; }
+    .popup-pts   { font-size:2rem; font-weight:700; background:linear-gradient(90deg,#ffd93d,#f7931e); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; margin:8px 0; }
+    .popup-sub   { font-size:0.8rem; color:#a0aec0; line-height:1.5; margin-bottom:18px; }
+    .popup-close { width:100%; padding:11px; border-radius:10px; border:none; background:linear-gradient(135deg,#7b2ff7,#f107a3); color:#fff; font-family:'Inter',sans-serif; font-size:0.9rem; font-weight:600; cursor:pointer; }
+
+    .scoring-legend { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:14px; }
+    .score-tier { background:rgba(255,255,255,0.05); border-radius:8px; padding:7px 10px; font-size:0.7rem; }
+    .score-tier .tier-label { color:#a0aec0; }
+    .score-tier .tier-pts   { font-weight:700; color:#ffd93d; }
+
+    .history-log { max-height:110px; overflow-y:auto; background:rgba(255,255,255,0.04); border-radius:10px; padding:10px 12px; margin-top:12px; }
+    .history-log::-webkit-scrollbar { width:4px; }
+    .history-log::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.2); border-radius:99px; }
+    .history-entry { font-size:0.73rem; color:#a0aec0; padding:3px 0; border-bottom:1px solid rgba(255,255,255,0.05); display:flex; justify-content:space-between; }
+    .history-entry:last-child { border-bottom:none; }
+    .history-entry .hpts { color:#ffd93d; font-weight:600; }
+
+    /* ============================================================
+       RESPONSIVE — stack on mobile
+    ============================================================ */
+    @media (max-width:720px) {
+      .chef-stats-row   { grid-template-columns:1fr 1fr; }
+      .kpt-grid         { grid-template-columns:1fr; }
+      .driver-dashboard { grid-template-columns:1fr; }
+      .welcome-cards    { flex-direction:column; align-items:center; }
+      #menu-bar         { padding:0 14px; }
+      .menu-role-btn    { padding:6px 12px; font-size:0.78rem; }
+    }
+    @media (max-width:480px) {
+      .chef-stats-row { grid-template-columns:1fr; }
+    }
   </style>
 </head>
 
-<body>
+<body class="theme-welcome">
 
   <!-- ============================================================
-       PAGE HEADER
+       STEP 1: MENU BAR — always visible at top
+       Dark grey background, white text, two role buttons + logout
   ============================================================ -->
-  <div class="header">
-    <h1>🍔 QuickBite Dashboard</h1>
-    <p>AI-Powered Food Delivery Optimization · Live Prototype</p>
-  </div>
+  <nav id="menu-bar">
 
-  <!-- ============================================================
-       ROW 1: Two-column — Outlet Reallocation + Rewards Club
-  ============================================================ -->
-  <div class="dashboard">
-
-    <!-- ============================================================
-         LEFT PANEL — FEATURE 1: DYNAMIC OUTLET REALLOCATION
-    ============================================================ -->
-    <div class="panel">
-
-      <!-- Panel title -->
-      <div class="panel-title">
-        <div class="icon icon-orange">🏪</div>
-        <div>
-          <h2>Dynamic Outlet Reallocation</h2>
-        </div>
-        <span class="badge">LIVE</span>
-      </div>
-
-      <!-- Food item selector -->
-      <select id="food-select" onchange="render()">
-        <option value="Pizza">🍕 Pizza</option>
-        <option value="Burger">🍔 Burger</option>
-        <option value="Sushi">🍣 Sushi</option>
-      </select>
-
-      <!-- The three outlet cards — filled by JS -->
-      <div id="outlets-container"></div>
-
-      <!-- Why this outlet is optimal -->
-      <div class="why-box" id="why-box">Loading...</div>
-
-      <!-- Reallocate button — randomises kitchen loads -->
-      <button class="btn btn-orange" onclick="reallocate()">
-        🔀 Reallocate Order (Simulate New Loads)
-      </button>
-
-    </div><!-- end left panel -->
-
-    <!-- ============================================================
-         RIGHT PANEL — FEATURE 2: AUTOMATIC DELIVERY TRACKER
-         Points are earned by the SYSTEM based on actual delivery
-         time — drivers cannot manually trigger rewards.
-    ============================================================ -->
-    <div class="panel" style="position: relative;">
-
-      <!-- Panel title -->
-      <div class="panel-title">
-        <div class="icon icon-purple">⭐</div>
-        <div>
-          <h2>Delivery Partner Rewards</h2>
-        </div>
-        <span class="badge">AUTO</span>
-      </div>
-
-      <!-- Partner profile -->
-      <div class="partner-row">
-        <div class="avatar">R</div>
-        <div class="partner-info">
-          <h3>Rampravesh Kumar</h3>
-          <p>🛵 Senior Delivery Partner · Joined Jan 2023</p>
-        </div>
-      </div>
-
-      <!-- ── ACTIVE DELIVERY COUNTDOWN ── -->
-      <div class="delivery-card">
-        <div class="delivery-meta">
-          <span class="delivery-num" id="delivery-num">Current Delivery #1</span>
-          <span class="delivery-expected">Expected: <span id="expected-label">25 min</span></span>
-        </div>
-
-        <!-- Big countdown clock — filled by JS every second -->
-        <div class="timer-display" id="timer-display">25:00</div>
-        <div class="timer-label">Time Remaining</div>
-
-        <!-- Visual bar draining left → right as time passes -->
-        <div class="timer-track">
-          <div class="timer-bar" id="timer-bar" style="width: 100%;"></div>
-        </div>
-
-        <!-- "Mark as Delivered" — the ONLY way points are awarded -->
-        <button class="btn btn-purple" id="deliver-btn" onclick="markDelivered()">
-          📦 Mark as Delivered
-        </button>
-      </div>
-
-      <!-- ── SCORING LEGEND ── -->
-      <div class="scoring-legend">
-        <div class="score-tier">
-          <div class="tier-label">⚡ 5+ min early</div>
-          <div class="tier-pts">+30 pts — Very Fast</div>
-        </div>
-        <div class="score-tier">
-          <div class="tier-label">🚀 2–4 min early</div>
-          <div class="tier-pts">+15 pts — Fast</div>
-        </div>
-        <div class="score-tier">
-          <div class="tier-label">✅ On time (±1 min)</div>
-          <div class="tier-pts">+5 pts — On Time</div>
-        </div>
-        <div class="score-tier">
-          <div class="tier-label">🐢 Late</div>
-          <div class="tier-pts">+0 pts — No reward</div>
-        </div>
-      </div>
-
-      <!-- ── POINTS SUMMARY STRIP ── -->
-      <div class="points-strip">
-        <div class="pts-left">
-          <div class="pts-label">Total Points</div>
-          <div class="pts-value" id="pts-value">0</div>
-        </div>
-        <div class="pts-right">
-          <div class="pts-label">Deliveries Done</div>
-          <div class="pts-count" id="delivery-count">0</div>
-        </div>
-      </div>
-
-      <!-- ── PROGRESS BAR TO ₹500 REWARD ── -->
-      <div class="progress-section">
-        <div class="progress-header">
-          <span>Progress to ₹500 Bonus</span>
-          <span id="progress-label">0 / 500 pts</span>
-        </div>
-        <div class="progress-track">
-          <div class="progress-fill" id="progress-fill" style="width: 0%;"></div>
-        </div>
-        <div class="progress-milestones">
-          <span>0</span><span>100</span><span>200</span><span>300</span><span>400</span><span>500</span>
-        </div>
-      </div>
-
-      <!-- Reward unlocked banner — appears automatically when ≥500 pts -->
-      <div class="reward-banner" id="reward-banner">
-        <div class="reward-title">🎉 Reward Unlocked!</div>
-        <div class="reward-sub">₹500 bonus credited to your account</div>
-      </div>
-
-      <!-- Next delivery button — resets timer, keeps accumulated points -->
-      <button class="btn btn-purple" id="next-btn" onclick="nextDelivery()" style="display:none;">
-        ▶ Next Delivery
-      </button>
-
-      <!-- Scrollable delivery history log -->
-      <div class="history-log" id="history-log">
-        <div class="history-entry" style="color:#718096;font-style:italic;justify-content:center;">
-          No deliveries yet — complete one to see history
-        </div>
-      </div>
-
-      <!-- ── RESULT POPUP OVERLAY ──
-           Appears over the panel when "Mark as Delivered" is clicked.
-           Shows how many minutes early/late and points earned.
-      -->
-      <div class="popup-overlay" id="popup-overlay">
-        <div class="popup-box">
-          <div class="popup-emoji" id="popup-emoji">🎉</div>
-          <div class="popup-title" id="popup-title">Delivery Complete!</div>
-          <div class="popup-pts"  id="popup-pts">+30 pts</div>
-          <div class="popup-sub"  id="popup-sub">Delivered 6 minutes early!</div>
-          <button class="popup-close" onclick="closePopup()">Got it ✓</button>
-        </div>
-      </div>
-
-    </div><!-- end right panel -->
-
-  </div><!-- end row-1 dashboard grid -->
-
-
-  <!-- ============================================================
-       ROW 2: FULL-WIDTH — FEATURE 3: SMART KPT MANAGEMENT SYSTEM
-       NEW FEATURE — Added below existing two panels.
-       KPT = Kitchen Preparation Time
-  ============================================================ -->
-  <div class="dashboard-full">
-
-    <!-- Optional visual divider between rows -->
-    <div class="section-divider" style="margin-bottom:20px;">
-      <span>⬇ New Feature</span>
+    <!-- Left: Brand -->
+    <div class="menu-brand">
+      <div class="dot"></div>
+      QuickBite
     </div>
 
-    <div class="kpt-panel">
+    <!-- Centre: Role selector buttons -->
+    <div class="menu-roles">
+      <!-- Clicking these opens the login modal for that role -->
+      <button class="menu-role-btn" id="btn-chef"   onclick="selectRole('chef')">👨‍🍳 CHEF</button>
+      <button class="menu-role-btn" id="btn-driver" onclick="selectRole('driver')">🛵 DRIVER</button>
+    </div>
 
-      <!-- ── KPT PANEL HEADER ── -->
-      <div class="panel-title" style="margin-bottom:6px;">
-        <div class="icon icon-teal">⏱️</div>
-        <div>
-          <h2>Smart KPT Management System</h2>
-          <p style="font-size:0.75rem;color:#718096;margin-top:2px;">
-            Kitchen Preparation Time · Rider Sync · Aggregator-Aware
-          </p>
-        </div>
-        <span class="badge" style="background:rgba(0,180,216,0.2);color:#00b4d8;">SMART</span>
-      </div>
+    <!-- Right: Active user info + Logout -->
+    <div style="display:flex;align-items:center;gap:4px;">
+      <span id="active-user-badge"></span>
+      <!-- LOGOUT button — hidden until a role is active -->
+      <button id="logout-btn" onclick="logout()">⏏ Logout</button>
+    </div>
 
-      <!-- Formula strip -->
-      <div style="background:rgba(0,180,216,0.06);border:1px solid rgba(0,180,216,0.18);border-radius:10px;padding:9px 14px;font-size:0.72rem;color:#7dd3fc;font-family:monospace;margin-bottom:4px;">
-        ETA = t_base × LoadFactor × PeakFactor &nbsp;|&nbsp;
-        LoadFactor = 1 + 0.25 if load &gt; 70% &nbsp;|&nbsp;
-        PeakFactor = 1 + 0.30 if peak hours &nbsp;|&nbsp;
-        MatchDiscount = −20% if last dish matches
-      </div>
-
-      <!-- ── 4-column sections grid ── -->
-      <div class="kpt-grid">
-
-        <!-- ─────────────────────────────────────────
-             SECTION A: SYSTEM PREDICTION
-             Auto-calculates KPT from inputs
-        ───────────────────────────────────────── -->
-        <div class="kpt-card">
-          <div class="kpt-section-label">📊 A — System Prediction</div>
-
-          <!-- Dish selector -->
-          <label class="kpt-label">Select Dish</label>
-          <select class="kpt-select" id="kpt-dish" onchange="kptCalculate()">
-            <option value="roasted_chicken">🍗 Roasted Chicken (5 min)</option>
-            <option value="butter_chicken">🍛 Butter Chicken (8 min)</option>
-            <option value="paneer_tikka">🥩 Paneer Tikka (6 min)</option>
-            <option value="biryani">🍚 Biryani (10 min)</option>
-          </select>
-
-          <!-- Last dish prepared (for match discount) -->
-          <label class="kpt-label">Last Dish Prepared</label>
-          <select class="kpt-select" id="kpt-last-dish" onchange="kptCalculate()">
-            <option value="none">None</option>
-            <option value="roasted_chicken">🍗 Roasted Chicken</option>
-            <option value="butter_chicken">🍛 Butter Chicken</option>
-            <option value="paneer_tikka">🥩 Paneer Tikka</option>
-            <option value="biryani">🍚 Biryani</option>
-          </select>
-
-          <!-- Restaurant load slider (0–100%, default 40%) -->
-          <label class="kpt-label">Current Restaurant Load</label>
-          <div class="kpt-slider-row">
-            <input type="range" id="kpt-load-slider" min="0" max="100" value="40"
-                   oninput="kptSliderUpdate(); kptCalculate()" />
-            <span class="kpt-slider-val" id="kpt-load-val">40%</span>
-          </div>
-
-          <!-- Peak hours toggle -->
-          <div class="kpt-toggle-row">
-            <label class="kpt-toggle">
-              <input type="checkbox" id="kpt-peak-toggle" onchange="kptCalculate()" />
-              <span class="kpt-toggle-slider"></span>
-            </label>
-            <span class="kpt-toggle-label">Peak Hours</span>
-            <span class="kpt-toggle-state" id="kpt-peak-state">OFF</span>
-          </div>
-
-          <!-- Calculated KPT result -->
-          <div class="kpt-result-box">
-            <div class="kpt-result-label">System Predicted KPT</div>
-            <div class="kpt-result-time" id="kpt-predicted-display">05:00</div>
-          </div>
-
-          <!-- Live breakdown formula -->
-          <div class="kpt-formula-box" id="kpt-formula-detail">
-            Base: 300s × 1.00 × 1.00 = 300s
-          </div>
-        </div><!-- end Section A -->
-
-
-        <!-- ─────────────────────────────────────────
-             SECTION B: MANUAL CHEF INPUT
-             Chef can override the predicted KPT
-        ───────────────────────────────────────── -->
-        <div class="kpt-card">
-          <div class="kpt-section-label">👨‍🍳 B — Chef Override</div>
-
-          <!-- Shows the current KPT the chef is about to override -->
-          <div class="kpt-chef-current">
-            System predicts: <strong id="kpt-chef-predicted-val">05:00</strong>
-          </div>
-
-          <!-- Chef types new time in MM:SS format -->
-          <label class="kpt-label">Enter New Prep Time (MM:SS)</label>
-          <input
-            type="text"
-            id="kpt-chef-input"
-            class="kpt-input"
-            placeholder="e.g. 07:30"
-            maxlength="5"
-            oninput="kptFormatInput(this)"
-          />
-
-          <!-- Update / Cancel / Save buttons -->
-          <div class="kpt-btn-row">
-            <button class="btn btn-teal btn-sm" onclick="kptChefUpdate()">✏️ Update</button>
-            <button class="btn btn-gray btn-sm" onclick="kptChefCancel()">Cancel</button>
-            <button class="btn btn-sm" style="background:linear-gradient(135deg,#1a6b2a,#2d9e3f);color:#fff;" onclick="kptChefSave()">💾 Save</button>
-          </div>
-
-          <!-- Confirmation message shown after chef saves -->
-          <div class="kpt-chef-msg" id="kpt-chef-msg">
-            ✅ KPT manually updated by chef to <strong id="kpt-chef-saved-val">--:--</strong>
-          </div>
-
-          <!-- Context note for the chef -->
-          <div class="kpt-chef-note">
-            💡 <strong style="color:#e2e8f0;">Chef knows ground reality</strong> — can handle
-            multiple aggregators (Swiggy, Zomato, Dunzo) and bulk orders simultaneously.
-            Chef override takes precedence over system prediction.
-          </div>
-        </div><!-- end Section B -->
-
-
-        <!-- ─────────────────────────────────────────
-             SECTION C: LIVE COUNTDOWN TIMER
-             Visible to delivery partner / rider
-        ───────────────────────────────────────── -->
-        <div class="kpt-card" style="text-align:center;">
-          <div class="kpt-section-label">🛵 C — Live Rider Timer</div>
-
-          <!-- BIG countdown display — most prominent element -->
-          <div class="kpt-big-timer" id="kpt-big-timer">05:00</div>
-          <div class="kpt-timer-label">Kitchen Countdown</div>
-
-          <!-- Progress bar showing time consumed -->
-          <div class="kpt-timer-track">
-            <div class="kpt-timer-bar" id="kpt-timer-bar" style="width:100%;"></div>
-          </div>
-
-          <!-- Status message: idle / counting / done -->
-          <div class="kpt-timer-status" id="kpt-timer-status">Press START to begin</div>
-
-          <!-- Start Preparation button — initiates the countdown -->
-          <button class="btn btn-teal" id="kpt-start-btn" onclick="kptTimerStart()" style="margin-bottom:8px;">
-            ▶ START PREPARATION
-          </button>
-
-          <!-- Pause and Reset controls for demo purposes -->
-          <div class="kpt-ctrl-row">
-            <button class="btn btn-gray" id="kpt-pause-btn" onclick="kptTimerPause()">⏸ Pause</button>
-            <button class="btn btn-gray" onclick="kptTimerReset()">↺ Reset</button>
-          </div>
-        </div><!-- end Section C -->
-
-
-        <!-- ─────────────────────────────────────────
-             SECTION D: BENEFITS DISPLAY
-             Static informational bullet points
-        ───────────────────────────────────────── -->
-        <div class="kpt-card">
-          <div class="kpt-section-label">🎯 D — System Benefits</div>
-
-          <ul class="kpt-benefits-list">
-            <li>✅ <strong>Rider arrival synchronised</strong> with KPT — rider dispatched when prep nears completion</li>
-            <li>✅ <strong>Minimize rider arrival delays</strong> — no late pickups due to underestimated prep time</li>
-            <li>✅ <strong>Reduce early arrival</strong> and waiting at restaurant — cost and time savings for partner</li>
-            <li>✅ <strong>Reduce order cancellation</strong> — accurate ETAs set correct customer expectations</li>
-            <li>✅ <strong>Save overall delivery time</strong> — tighter prep-to-pickup handoff shortens end-to-end time</li>
-          </ul>
-
-          <!-- Visual highlight badge -->
-          <div>
-            <span class="kpt-benefit-badge">🏆 Reduces end-to-end ETA by ~18%</span>
-          </div>
-        </div><!-- end Section D -->
-
-      </div><!-- end kpt-grid -->
-    </div><!-- end kpt-panel -->
-  </div><!-- end dashboard-full row-2 -->
+  </nav>
 
 
   <!-- ============================================================
-       JAVASCRIPT — ALL APP LOGIC BELOW
+       STEP 4: LOGIN MODAL
+       Appears when a role button is clicked (either in menu bar
+       or on the welcome screen cards).
+       pendingRole stores which role is being logged into.
+  ============================================================ -->
+  <div id="login-modal-overlay">
+    <div class="login-modal">
+      <div class="login-icon" id="modal-icon">👨‍🍳</div>
+      <div class="login-title" id="modal-title">Login as Chef</div>
+      <div class="login-sub"   id="modal-sub">Enter your Kitchen ID to access the Chef Dashboard</div>
+      <!-- Any number is accepted — no real database needed -->
+      <input
+        type="number"
+        id="login-id-input"
+        class="login-input"
+        placeholder="e.g. 1042"
+        min="1"
+        onkeydown="if(event.key==='Enter') confirmLogin()"
+      />
+      <div class="login-error" id="login-error"></div>
+      <button class="login-btn login-btn-chef" id="login-confirm-btn" onclick="confirmLogin()">Enter Dashboard →</button>
+      <button class="login-cancel" onclick="cancelLogin()">Cancel</button>
+    </div>
+  </div>
+
+
+  <!-- ============================================================
+       MAIN CONTENT — three screens: welcome / chef / driver
+  ============================================================ -->
+  <div id="main-content">
+
+    <!-- ==========================================================
+         STEP 1: WELCOME SCREEN
+         Shown on page load. No features visible yet.
+         User must select a role to proceed.
+    ========================================================== -->
+    <div id="welcome-screen">
+      <div class="welcome-logo">🍔</div>
+      <h1 class="welcome-title">QuickBite Dashboard</h1>
+      <p class="welcome-subtitle">AI-powered delivery optimization. Select your role to get started.</p>
+      <p class="welcome-prompt">Select your role</p>
+      <div class="welcome-cards">
+        <!-- These also trigger the login modal, same as menu buttons -->
+        <div class="welcome-card chef-card" onclick="selectRole('chef')">
+          <div class="wc-icon">👨‍🍳</div>
+          <div class="wc-title">I'm a Chef</div>
+          <div class="wc-desc">Manage kitchen load, prep times, and order queue from your kitchen.</div>
+        </div>
+        <div class="welcome-card driver-card" onclick="selectRole('driver')">
+          <div class="wc-icon">🛵</div>
+          <div class="wc-title">I'm a Driver</div>
+          <div class="wc-desc">Find the best outlet and earn rewards for on-time deliveries.</div>
+        </div>
+      </div>
+    </div><!-- end welcome-screen -->
+
+
+    <!-- ==========================================================
+         STEP 2: CHEF VIEW
+         Only shown after chef login.
+         Background: warm orange/peach (theme-chef on body).
+         Contains: 3 stat cards + KPT Management panel ONLY.
+         NO Rewards Club or Driver features here.
+    ========================================================== -->
+    <div id="chef-view">
+
+      <!-- Role greeting with ID badge -->
+      <div class="dash-header chef-header">
+        <div class="dh-left">
+          <h2>👨‍🍳 Chef Dashboard</h2>
+          <p>Smart KPT Management — Kitchen Performance Tracker</p>
+        </div>
+        <span class="dh-id-badge chef-id-badge" id="chef-id-display">Kitchen #—</span>
+      </div>
+
+      <!-- 3 live stat cards: load / avg prep / pending queue -->
+      <div class="chef-stats-row">
+        <div class="chef-stat-card">
+          <div class="cs-label">🔥 Kitchen Load</div>
+          <div class="cs-value" id="chef-load-display">40</div>
+          <div class="cs-unit">% capacity</div>
+        </div>
+        <div class="chef-stat-card">
+          <div class="cs-label">⏱ Avg Prep Time</div>
+          <div class="cs-value" id="chef-avg-display">05:00</div>
+          <div class="cs-unit">min per order</div>
+        </div>
+        <div class="chef-stat-card">
+          <div class="cs-label">📋 Pending Orders</div>
+          <div class="cs-value" id="chef-pending-display">0</div>
+          <div class="cs-unit">in queue</div>
+        </div>
+      </div>
+
+      <!-- KPT Management Panel -->
+      <div class="chef-kpt-wrap">
+        <div class="kpt-panel">
+
+          <div class="panel-title" style="margin-bottom:6px;">
+            <div class="icon icon-orange">⏱️</div>
+            <div>
+              <h2>Smart KPT Management</h2>
+              <p style="font-size:0.75rem;color:#718096;margin-top:2px;">Kitchen Preparation Time · Prediction + Chef Override + Live Timer</p>
+            </div>
+            <span class="badge" style="background:rgba(255,107,53,0.2);color:#ff9052;">SMART</span>
+          </div>
+
+          <!-- Formula display -->
+          <div style="background:rgba(255,107,53,0.07);border:1px solid rgba(255,107,53,0.2);border-radius:10px;padding:9px 14px;font-size:0.72rem;color:#ffa07a;font-family:monospace;margin-bottom:4px;">
+            KPT = base × LoadFactor × PeakFactor &nbsp;|&nbsp; LoadFactor = ×1.25 if load &gt; 70% &nbsp;|&nbsp; PeakFactor = ×1.30 if peak hours &nbsp;|&nbsp; MatchDiscount = −20% same dish
+          </div>
+
+          <!-- 3-column KPT grid -->
+          <div class="kpt-grid">
+
+            <!-- Column A: System auto-prediction -->
+            <div class="kpt-card">
+              <div class="kpt-section-label">📊 System Prediction</div>
+
+              <label class="kpt-label">Select Dish</label>
+              <select id="kpt-dish" onchange="kptCalculate()">
+                <option value="roasted_chicken">🍗 Roasted Chicken (5 min)</option>
+                <option value="butter_chicken">🍛 Butter Chicken (8 min)</option>
+                <option value="paneer_tikka">🥩 Paneer Tikka (6 min)</option>
+                <option value="biryani">🍚 Biryani (10 min)</option>
+              </select>
+
+              <label class="kpt-label">Last Dish Prepared</label>
+              <select id="kpt-last-dish" onchange="kptCalculate()">
+                <option value="none">None</option>
+                <option value="roasted_chicken">🍗 Roasted Chicken</option>
+                <option value="butter_chicken">🍛 Butter Chicken</option>
+                <option value="paneer_tikka">🥩 Paneer Tikka</option>
+                <option value="biryani">🍚 Biryani</option>
+              </select>
+
+              <!-- This slider also updates the chef-load stat card -->
+              <label class="kpt-label">Kitchen Load</label>
+              <div class="kpt-slider-row">
+                <input type="range" id="kpt-load-slider" min="0" max="100" value="40"
+                       oninput="kptSliderUpdate(); kptCalculate()" />
+                <span class="kpt-slider-val" id="kpt-load-val">40%</span>
+              </div>
+
+              <div class="kpt-toggle-row">
+                <label class="kpt-toggle">
+                  <input type="checkbox" id="kpt-peak-toggle" onchange="kptCalculate()" />
+                  <span class="kpt-toggle-slider"></span>
+                </label>
+                <span class="kpt-toggle-label">Peak Hours</span>
+                <span class="kpt-toggle-state" id="kpt-peak-state">OFF</span>
+              </div>
+
+              <div class="kpt-result-box">
+                <div class="kpt-result-label">Predicted KPT</div>
+                <div class="kpt-result-time" id="kpt-predicted-display">05:00</div>
+              </div>
+              <div class="kpt-formula-box" id="kpt-formula-detail">Base: 300s × 1.00 × 1.00 = 300s</div>
+            </div>
+
+            <!-- Column B: Chef can mark ready + override prep time -->
+            <div class="kpt-card">
+              <div class="kpt-section-label">👨‍🍳 Chef Actions</div>
+
+              <div class="kpt-chef-current">
+                System predicts: <strong id="kpt-chef-predicted-val">05:00</strong>
+              </div>
+
+              <!-- Mark as Ready for Pickup — adds to visible queue -->
+              <label class="kpt-label">Mark Order Ready for Pickup</label>
+              <div class="kpt-btn-row" style="margin-bottom:14px;">
+                <button class="btn btn-orange btn-sm" style="flex:1;" onclick="kptMarkReady()">✅ Mark as Ready</button>
+              </div>
+
+              <label class="kpt-label">Ready for Pickup Queue</label>
+              <div class="kpt-queue" id="kpt-queue">
+                <div class="kpt-queue-empty">No orders ready yet</div>
+              </div>
+
+              <!-- Chef can override the predicted prep time -->
+              <label class="kpt-label">Override Prep Time (MM:SS)</label>
+              <input type="text" id="kpt-chef-input" class="kpt-input" placeholder="e.g. 07:30"
+                     maxlength="5" oninput="kptFormatInput(this)" />
+              <div class="kpt-btn-row">
+                <button class="btn btn-orange btn-sm" onclick="kptChefSave()">💾 Save Override</button>
+                <button class="btn btn-gray   btn-sm" onclick="kptChefCancel()">✕ Clear</button>
+              </div>
+              <div class="kpt-chef-msg" id="kpt-chef-msg">
+                ✅ Override saved: <strong id="kpt-chef-saved-val">--:--</strong>
+              </div>
+              <div class="kpt-chef-note">
+                💡 Chef override takes precedence over system prediction. Handles multiple aggregators &amp; bulk orders.
+              </div>
+            </div>
+
+            <!-- Column C: Live countdown timer (visible to rider) -->
+            <div class="kpt-card" style="text-align:center;">
+              <div class="kpt-section-label">🛵 Live Rider Timer</div>
+
+              <div class="kpt-big-timer" id="kpt-big-timer">05:00</div>
+              <div class="kpt-timer-label">Kitchen Countdown</div>
+
+              <div class="kpt-timer-track">
+                <div class="kpt-timer-bar" id="kpt-timer-bar" style="width:100%;"></div>
+              </div>
+
+              <div class="kpt-timer-status" id="kpt-timer-status">Press START to begin</div>
+
+              <button class="btn btn-orange" id="kpt-start-btn" onclick="kptTimerStart()" style="margin-bottom:8px;">
+                ▶ START PREPARATION
+              </button>
+              <div class="kpt-ctrl-row">
+                <button class="btn btn-gray" id="kpt-pause-btn" onclick="kptTimerPause()">⏸ Pause</button>
+                <button class="btn btn-gray" onclick="kptTimerReset()">↺ Reset</button>
+              </div>
+            </div>
+
+          </div><!-- end kpt-grid -->
+
+          <!-- The requested message (STEP 2 spec) -->
+          <div class="kpt-smart-note">
+            💡 <strong>Smart KPT helps you balance your kitchen load automatically</strong>
+            — predicted prep time adjusts dynamically based on current load, dish type, and peak hours,
+            then syncs the rider dispatch timer for a seamless pickup handoff.
+          </div>
+
+        </div><!-- end kpt-panel -->
+      </div><!-- end chef-kpt-wrap -->
+    </div><!-- end chef-view -->
+
+
+    <!-- ==========================================================
+         STEP 3: DRIVER VIEW
+         Only shown after driver login.
+         Background: cool blue (theme-driver on body).
+         LEFT:  Dynamic Outlet Reallocation (original logic)
+         RIGHT: Rewards Club with auto timer-based points (original logic)
+         NO KPT or Chef features here.
+    ========================================================== -->
+    <div id="driver-view">
+
+      <!-- Role greeting with ID badge -->
+      <div class="dash-header driver-header">
+        <div class="dh-left">
+          <h2>🛵 Driver Dashboard</h2>
+          <p>Outlet Reallocation &amp; Rewards Club — Live</p>
+        </div>
+        <span class="dh-id-badge driver-id-badge" id="driver-id-display">Partner #—</span>
+      </div>
+
+      <!-- Two-panel side-by-side layout -->
+      <div class="driver-dashboard">
+
+        <!-- LEFT PANEL: Dynamic Outlet Reallocation (original logic preserved) -->
+        <div class="panel">
+          <div class="panel-title">
+            <div class="icon icon-orange">🏪</div>
+            <div><h2>Dynamic Outlet Reallocation</h2></div>
+            <span class="badge">LIVE</span>
+          </div>
+
+          <select id="food-select" onchange="render()">
+            <option value="Pizza">🍕 Pizza</option>
+            <option value="Burger">🍔 Burger</option>
+            <option value="Sushi">🍣 Sushi</option>
+          </select>
+
+          <!-- Outlet cards rendered by JS -->
+          <div id="outlets-container"></div>
+          <div class="why-box" id="why-box">Loading...</div>
+
+          <button class="btn btn-orange" onclick="reallocate()">
+            🔀 Reallocate Order (Simulate New Loads)
+          </button>
+        </div>
+
+        <!-- RIGHT PANEL: Delivery Partner Rewards (original logic preserved) -->
+        <div class="panel panel-relative">
+          <div class="panel-title">
+            <div class="icon icon-purple">⭐</div>
+            <div><h2>Delivery Partner Rewards</h2></div>
+            <span class="badge">AUTO</span>
+          </div>
+
+          <!-- Driver avatar + name update dynamically on login -->
+          <div class="partner-row">
+            <div class="avatar-driver" id="driver-avatar">D</div>
+            <div class="partner-info">
+              <h3 id="driver-name-display">Delivery Partner</h3>
+              <p>🛵 Active Partner</p>
+            </div>
+          </div>
+
+          <!-- Active delivery countdown clock -->
+          <div class="delivery-card">
+            <div class="delivery-meta">
+              <span class="delivery-num" id="delivery-num">Current Delivery #1</span>
+              <span class="delivery-expected">Expected: <span id="expected-label">25 min</span></span>
+            </div>
+            <div class="timer-display" id="timer-display">25:00</div>
+            <div class="timer-label">Time Remaining</div>
+            <div class="timer-track">
+              <div class="timer-bar" id="timer-bar" style="width:100%;"></div>
+            </div>
+            <!-- Only way to earn points — no manual point button -->
+            <button class="btn btn-purple" id="deliver-btn" onclick="markDelivered()">
+              📦 Mark as Delivered
+            </button>
+          </div>
+
+          <!-- Points scoring legend -->
+          <div class="scoring-legend">
+            <div class="score-tier"><div class="tier-label">⚡ 5+ min early</div><div class="tier-pts">+30 pts — Very Fast</div></div>
+            <div class="score-tier"><div class="tier-label">🚀 2–4 min early</div><div class="tier-pts">+15 pts — Fast</div></div>
+            <div class="score-tier"><div class="tier-label">✅ On time (±1 min)</div><div class="tier-pts">+5 pts — On Time</div></div>
+            <div class="score-tier"><div class="tier-label">🐢 Late</div><div class="tier-pts">+0 pts — No reward</div></div>
+          </div>
+
+          <!-- Points summary strip -->
+          <div class="points-strip">
+            <div class="pts-left">
+              <div class="pts-label">Total Points</div>
+              <div class="pts-value" id="pts-value">0</div>
+            </div>
+            <div class="pts-right">
+              <div class="pts-label">Deliveries Done</div>
+              <div class="pts-count" id="delivery-count">0</div>
+            </div>
+          </div>
+
+          <!-- Progress bar to ₹500 reward -->
+          <div class="progress-section">
+            <div class="progress-header">
+              <span>Progress to ₹500 Bonus</span>
+              <span id="progress-label">0 / 500 pts</span>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill" id="progress-fill" style="width:0%;"></div>
+            </div>
+            <div class="progress-milestones">
+              <span>0</span><span>100</span><span>200</span><span>300</span><span>400</span><span>500</span>
+            </div>
+          </div>
+
+          <!-- Banner — appears automatically when >= 500 pts -->
+          <div class="reward-banner" id="reward-banner">
+            <div class="reward-title">🎉 Reward Unlocked!</div>
+            <div class="reward-sub">₹500 bonus credited to your account</div>
+          </div>
+
+          <!-- Shown after marking a delivery complete -->
+          <button class="btn btn-purple" id="next-btn" onclick="nextDelivery()" style="display:none;">
+            ▶ Next Delivery
+          </button>
+
+          <!-- Scrollable delivery history log -->
+          <div class="history-log" id="history-log">
+            <div class="history-entry" style="color:#718096;font-style:italic;justify-content:center;">
+              No deliveries yet — complete one to see history
+            </div>
+          </div>
+
+          <!-- Delivery result popup (appears over the panel) -->
+          <div class="popup-overlay" id="popup-overlay">
+            <div class="popup-box">
+              <div class="popup-emoji" id="popup-emoji">🎉</div>
+              <div class="popup-title" id="popup-title">Delivery Complete!</div>
+              <div class="popup-pts"   id="popup-pts">+30 pts</div>
+              <div class="popup-sub"   id="popup-sub">Delivered 6 minutes early!</div>
+              <button class="popup-close" onclick="closePopup()">Got it ✓</button>
+            </div>
+          </div>
+
+        </div><!-- end right rewards panel -->
+      </div><!-- end driver-dashboard -->
+    </div><!-- end driver-view -->
+
+  </div><!-- end main-content -->
+
+
+  <!-- ============================================================
+       JAVASCRIPT
+       Sections:
+         A. ROLE SYSTEM   — selectRole, confirmLogin, logout
+         B. FEATURE 1     — Outlet Reallocation (original)
+         C. FEATURE 2     — Rewards Club / delivery timer (original)
+         D. FEATURE 3     — Smart KPT (chef-only)
   ============================================================ -->
   <script>
 
     // ============================================================
-    // FEATURE 1 DATA & LOGIC
+    // A. ROLE-BASED SYSTEM
     // ============================================================
 
-    // Fixed base data for the three outlets
+    let pendingRole = null;   // role being logged into (set by selectRole)
+    let currentRole = null;   // currently active role (set by activateDashboard)
+
+    /**
+     * selectRole(role)
+     * Called from menu bar buttons or welcome screen cards.
+     * Stores the chosen role and opens the login modal.
+     */
+    function selectRole(role) {
+      pendingRole = role;
+
+      // Customise modal text and button colour for the role
+      if (role === 'chef') {
+        document.getElementById('modal-icon').textContent  = '👨‍🍳';
+        document.getElementById('modal-title').textContent = 'Login as Chef';
+        document.getElementById('modal-sub').textContent   = 'Enter your Kitchen ID (any number) to access the Chef Dashboard';
+        document.getElementById('login-confirm-btn').className = 'login-btn login-btn-chef';
+        document.getElementById('login-id-input').placeholder  = 'e.g. 1042';
+      } else {
+        document.getElementById('modal-icon').textContent  = '🛵';
+        document.getElementById('modal-title').textContent = 'Login as Driver';
+        document.getElementById('modal-sub').textContent   = 'Enter your Delivery Partner ID (any number) to access your Dashboard';
+        document.getElementById('login-confirm-btn').className = 'login-btn login-btn-driver';
+        document.getElementById('login-id-input').placeholder  = 'e.g. 7583';
+      }
+
+      // Reset previous state
+      document.getElementById('login-id-input').value    = '';
+      document.getElementById('login-error').textContent = '';
+      document.getElementById('login-modal-overlay').classList.add('active');
+      setTimeout(() => document.getElementById('login-id-input').focus(), 100);
+    }
+
+    /**
+     * confirmLogin()
+     * Validates the ID (must be any number) and activates the dashboard.
+     */
+    function confirmLogin() {
+      const rawId = document.getElementById('login-id-input').value.trim();
+      if (!rawId || isNaN(Number(rawId)) || Number(rawId) <= 0) {
+        document.getElementById('login-error').textContent = '⚠ Please enter a valid numeric ID';
+        return;
+      }
+      document.getElementById('login-modal-overlay').classList.remove('active');
+      activateDashboard(pendingRole, Number(rawId));
+    }
+
+    /**
+     * cancelLogin() — dismiss modal without doing anything
+     */
+    function cancelLogin() {
+      document.getElementById('login-modal-overlay').classList.remove('active');
+      pendingRole = null;
+    }
+
+    /**
+     * activateDashboard(role, userId)
+     * Hides welcome screen, shows the correct role view,
+     * applies colour theme, and updates menu bar state.
+     */
+    function activateDashboard(role, userId) {
+      currentRole = role;
+
+      // Hide welcome, show the right view
+      document.getElementById('welcome-screen').style.display = 'none';
+      document.getElementById('chef-view').style.display   = role === 'chef'   ? 'block' : 'none';
+      document.getElementById('driver-view').style.display = role === 'driver' ? 'block' : 'none';
+
+      // STEP 5: Apply colour theme
+      document.body.className = role === 'chef' ? 'theme-chef' : 'theme-driver';
+
+      // Highlight active role button in menu bar
+      document.getElementById('btn-chef').className   = 'menu-role-btn' + (role === 'chef'   ? ' active-chef'   : '');
+      document.getElementById('btn-driver').className = 'menu-role-btn' + (role === 'driver' ? ' active-driver' : '');
+
+      // Show logout button and user badge
+      document.getElementById('logout-btn').style.display    = 'inline-block';
+      const badge = document.getElementById('active-user-badge');
+      badge.style.display = 'inline';
+      badge.textContent   = role === 'chef' ? `Kitchen #${userId}` : `Partner #${userId}`;
+
+      if (role === 'chef') {
+        // Update chef-specific UI
+        document.getElementById('chef-id-display').textContent = `Kitchen #${userId}`;
+        kptCalculate();   // run initial KPT prediction
+      } else {
+        // Update driver-specific UI
+        document.getElementById('driver-id-display').textContent = `Partner #${userId}`;
+        // Personalise avatar with last digit of ID
+        document.getElementById('driver-avatar').textContent      = String(userId).slice(-1);
+        document.getElementById('driver-name-display').textContent = `Driver #${userId}`;
+        render();       // render outlet cards
+        initTimer();    // start the delivery countdown
+      }
+    }
+
+    /**
+     * logout()
+     * Returns to welcome screen. Points and timers persist in memory
+     * for the session (so if driver logs back in, they continue).
+     */
+    function logout() {
+      currentRole = null;
+      document.getElementById('welcome-screen').style.display = 'flex';
+      document.getElementById('chef-view').style.display      = 'none';
+      document.getElementById('driver-view').style.display    = 'none';
+      document.body.className = 'theme-welcome';
+      document.getElementById('btn-chef').className   = 'menu-role-btn';
+      document.getElementById('btn-driver').className = 'menu-role-btn';
+      document.getElementById('logout-btn').style.display         = 'none';
+      document.getElementById('active-user-badge').style.display  = 'none';
+    }
+
+
+    // ============================================================
+    // B. FEATURE 1 — DYNAMIC OUTLET REALLOCATION
+    //    Original logic: unchanged
+    // ============================================================
+
     const outlets = [
       { name: 'Outlet A', load: 20, prep: 5,  dist: 1.2 },
       { name: 'Outlet B', load: 80, prep: 15, dist: 0.8 },
@@ -1271,24 +1043,23 @@
     }
 
     function getLoadColor(load) {
-      if (load < 40)  return '#6bcb77';
-      if (load < 70)  return '#ffd93d';
+      if (load < 40) return '#6bcb77';
+      if (load < 70) return '#ffd93d';
       return '#ff6b6b';
     }
 
     function render() {
-      const food = document.getElementById('food-select').value;
+      const food      = document.getElementById('food-select').value;
       const container = document.getElementById('outlets-container');
-      const times = outlets.map(calculateFulfillmentTime);
-      const minTime = Math.min(...times);
-      const optimalIdx = times.indexOf(minTime);
+      const times     = outlets.map(calculateFulfillmentTime);
+      const minTime   = Math.min(...times);
+      const optIdx    = times.indexOf(minTime);
 
       let html = '';
       outlets.forEach((o, i) => {
-        const ft    = times[i].toFixed(1);
-        const lc    = getLoadColor(o.load);
-        const isOpt = i === optimalIdx;
-
+        const ft   = times[i].toFixed(1);
+        const lc   = getLoadColor(o.load);
+        const isOpt = i === optIdx;
         html += `
           <div class="outlet-card ${isOpt ? 'optimal' : ''}">
             <div class="outlet-header">
@@ -1299,36 +1070,24 @@
               <div class="stat-box">
                 <div class="label">Kitchen Load</div>
                 <div class="value" style="color:${lc}">${o.load}%</div>
-                <div class="load-bar-wrap">
-                  <div class="load-bar" style="width:${o.load}%;background:${lc}"></div>
-                </div>
+                <div class="load-bar-wrap"><div class="load-bar" style="width:${o.load}%;background:${lc}"></div></div>
               </div>
-              <div class="stat-box">
-                <div class="label">Prep Time</div>
-                <div class="value">${o.prep} min</div>
-              </div>
-              <div class="stat-box">
-                <div class="label">Distance</div>
-                <div class="value">${o.dist} km</div>
-              </div>
+              <div class="stat-box"><div class="label">Prep Time</div><div class="value">${o.prep} min</div></div>
+              <div class="stat-box"><div class="label">Distance</div><div class="value">${o.dist} km</div></div>
             </div>
             <div class="fulfillment">
-              <span class="fkey">Total Fulfillment Time (prep + load×0.5 + dist×2)</span>
+              <span class="fkey">Fulfillment (prep + load×0.5 + dist×2)</span>
               <span class="fval">${ft} min</span>
             </div>
-          </div>
-        `;
+          </div>`;
       });
 
       container.innerHTML = html;
-
-      const best = outlets[optimalIdx];
+      const best = outlets[optIdx];
       document.getElementById('why-box').innerHTML =
-        `<strong>✅ ${best.name} is optimal</strong> for your ${food} order.<br>
-         Fulfillment time: <strong>${minTime.toFixed(1)} min</strong>
-         — lowest among all outlets.<br>
-         Kitchen load is <strong>${best.load}%</strong>, prep is <strong>${best.prep} min</strong>,
-         distance <strong>${best.dist} km</strong>.`;
+        `<strong>✅ ${best.name} is optimal</strong> for your ${food} order. ` +
+        `Fulfillment: <strong>${minTime.toFixed(1)} min</strong> — ` +
+        `Load <strong>${best.load}%</strong>, Prep <strong>${best.prep} min</strong>, Distance <strong>${best.dist} km</strong>.`;
     }
 
     function reallocate() {
@@ -1341,7 +1100,8 @@
 
 
     // ============================================================
-    // FEATURE 2 — AUTOMATIC DELIVERY TRACKER
+    // C. FEATURE 2 — REWARDS CLUB / DELIVERY TIMER
+    //    Original logic: unchanged
     // ============================================================
 
     let totalPoints    = 0;
@@ -1349,13 +1109,19 @@
     let expectedSecs   = 25 * 60;
     let remainingSecs  = 25 * 60;
     let timerInterval  = null;
-    let timerRunning   = true;
+    let timerRunning   = false;
     let rewardUnlocked = false;
     const THRESHOLD    = 500;
 
+    /** initTimer — called once when driver dashboard activates */
+    function initTimer() {
+      if (timerRunning) return;   // don't restart if already running
+      startTimer();
+    }
+
     function startTimer() {
       timerRunning = true;
-      document.getElementById('deliver-btn').disabled = false;
+      document.getElementById('deliver-btn').disabled    = false;
       document.getElementById('deliver-btn').style.opacity = '1';
 
       timerInterval = setInterval(() => {
@@ -1364,8 +1130,8 @@
         updateTimerDisplay();
         const pct = Math.max(0, (remainingSecs / expectedSecs) * 100);
         const bar = document.getElementById('timer-bar');
-        bar.style.width = pct + '%';
-        const isUrgent = remainingSecs < 180;
+        bar.style.width  = pct + '%';
+        const isUrgent   = remainingSecs < 180;
         document.getElementById('timer-display').className =
           'timer-display' + (remainingSecs < 0 ? ' done' : isUrgent ? ' urgent' : '');
         bar.className = 'timer-bar' + (isUrgent ? ' urgent' : '');
@@ -1378,43 +1144,33 @@
       const s    = abs % 60;
       const sign = remainingSecs < 0 ? '-' : '';
       document.getElementById('timer-display').textContent =
-        sign + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+        sign + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
     }
 
     function markDelivered() {
       timerRunning = false;
       clearInterval(timerInterval);
-      const btn = document.getElementById('deliver-btn');
-      btn.disabled = true;
+      const btn     = document.getElementById('deliver-btn');
+      btn.disabled  = true;
       btn.style.opacity = '0.5';
 
       const minutesEarly = remainingSecs / 60;
       let earnedPts, tier, emoji, message;
-      if (minutesEarly >= 5) {
-        earnedPts = 30; tier = 'Very Fast'; emoji = '⚡';
-        message = `${Math.floor(minutesEarly)} minutes early!`;
-      } else if (minutesEarly >= 2) {
-        earnedPts = 15; tier = 'Fast'; emoji = '🚀';
-        message = `${Math.floor(minutesEarly)} minutes early!`;
-      } else if (minutesEarly >= -1) {
-        earnedPts = 5; tier = 'On Time'; emoji = '✅';
-        message = 'Delivered right on time!';
-      } else {
-        earnedPts = 0; tier = 'Late'; emoji = '🐢';
-        message = `${Math.abs(Math.ceil(minutesEarly))} minutes late — no points this time.`;
-      }
+      if      (minutesEarly >= 5)  { earnedPts=30; tier='Very Fast'; emoji='⚡'; message=`${Math.floor(minutesEarly)} minutes early!`; }
+      else if (minutesEarly >= 2)  { earnedPts=15; tier='Fast';      emoji='🚀'; message=`${Math.floor(minutesEarly)} minutes early!`; }
+      else if (minutesEarly >= -1) { earnedPts=5;  tier='On Time';   emoji='✅'; message='Delivered right on time!'; }
+      else                         { earnedPts=0;  tier='Late';      emoji='🐢'; message=`${Math.abs(Math.ceil(minutesEarly))} minutes late — no points this time.`; }
 
-      totalPoints  += earnedPts;
+      totalPoints   += earnedPts;
       deliveryCount += 1;
       updatePointsUI();
       addHistoryEntry(`Delivery #${deliveryCount} — ${tier}`, earnedPts);
 
+      // Show result popup
       document.getElementById('popup-emoji').textContent = emoji;
-      document.getElementById('popup-title').textContent =
-        earnedPts > 0 ? 'Delivery Complete!' : 'Delivery Complete';
-      document.getElementById('popup-pts').textContent =
-        earnedPts > 0 ? `+${earnedPts} pts` : '0 pts';
-      document.getElementById('popup-sub').textContent = message;
+      document.getElementById('popup-title').textContent = earnedPts > 0 ? 'Delivery Complete!' : 'Delivery Complete';
+      document.getElementById('popup-pts').textContent   = earnedPts > 0 ? `+${earnedPts} pts` : '0 pts';
+      document.getElementById('popup-sub').textContent   = message;
       document.getElementById('popup-overlay').classList.add('active');
     }
 
@@ -1424,28 +1180,26 @@
     }
 
     function nextDelivery() {
-      const newMinutes = Math.floor(Math.random() * 21) + 20;
-      expectedSecs  = newMinutes * 60;
-      remainingSecs = newMinutes * 60;
-      document.getElementById('expected-label').textContent = newMinutes + ' min';
-      document.getElementById('delivery-num').textContent =
-        `Current Delivery #${deliveryCount + 1}`;
+      const newMin  = Math.floor(Math.random() * 21) + 20;
+      expectedSecs  = newMin * 60;
+      remainingSecs = newMin * 60;
+      document.getElementById('expected-label').textContent = newMin + ' min';
+      document.getElementById('delivery-num').textContent   = `Current Delivery #${deliveryCount + 1}`;
       updateTimerDisplay();
-      document.getElementById('timer-bar').style.width = '100%';
-      document.getElementById('timer-bar').className = 'timer-bar';
+      document.getElementById('timer-bar').style.width   = '100%';
+      document.getElementById('timer-bar').className     = 'timer-bar';
       document.getElementById('timer-display').className = 'timer-display';
-      document.getElementById('next-btn').style.display = 'none';
+      document.getElementById('next-btn').style.display  = 'none';
       clearInterval(timerInterval);
       startTimer();
     }
 
     function updatePointsUI() {
-      document.getElementById('pts-value').textContent = totalPoints;
+      document.getElementById('pts-value').textContent      = totalPoints;
       document.getElementById('delivery-count').textContent = deliveryCount;
       const pct = Math.min((totalPoints / THRESHOLD) * 100, 100);
-      document.getElementById('progress-fill').style.width = pct + '%';
-      document.getElementById('progress-label').textContent =
-        `${totalPoints} / ${THRESHOLD} pts`;
+      document.getElementById('progress-fill').style.width  = pct + '%';
+      document.getElementById('progress-label').textContent = `${totalPoints} / ${THRESHOLD} pts`;
       if (totalPoints >= THRESHOLD && !rewardUnlocked) {
         rewardUnlocked = true;
         document.getElementById('reward-banner').style.display = 'block';
@@ -1455,82 +1209,55 @@
     function addHistoryEntry(label, pts) {
       const log = document.getElementById('history-log');
       if (deliveryCount === 1) log.innerHTML = '';
-      const now  = new Date();
-      const time = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+      const now   = new Date();
+      const time  = now.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' });
       const entry = document.createElement('div');
       entry.className = 'history-entry';
       entry.innerHTML =
         `<span>${label} <em style="color:#718096;font-size:0.68rem">${time}</em></span>` +
-        `<span class="hpts">${pts > 0 ? '+' + pts : '0'} pts</span>`;
+        `<span class="hpts">${pts > 0 ? '+'+pts : '0'} pts</span>`;
       log.insertBefore(entry, log.firstChild);
     }
 
 
     // ============================================================
-    // FEATURE 3 — SMART KPT MANAGEMENT SYSTEM (NEW)
-    // All KPT state variables and functions are prefixed with "kpt"
-    // to ensure zero interference with Features 1 & 2.
+    // D. FEATURE 3 — SMART KPT MANAGEMENT (Chef view only)
+    //    All variables/functions prefixed kpt to avoid collisions
     // ============================================================
 
-    /**
-     * BASE PREP TIMES in seconds for each dish.
-     * Used as the starting point for the KPT formula.
-     */
     const KPT_BASE_TIMES = {
-      roasted_chicken: 300,   // 5 minutes
-      butter_chicken:  480,   // 8 minutes
-      paneer_tikka:    360,   // 6 minutes
-      biryani:         600,   // 10 minutes
+      roasted_chicken: 300,   // 5 min
+      butter_chicken:  480,   // 8 min
+      paneer_tikka:    360,   // 6 min
+      biryani:         600,   // 10 min
     };
 
-    /**
-     * KPT STATE
-     * kptActiveSecs  — the "live" KPT value used by the countdown timer.
-     *                  Set from predicted OR chef override.
-     * kptTotalSecs   — stores the full duration when the timer was started
-     *                  (needed to calculate the drain bar percentage).
-     * kptRemaining   — current countdown value in seconds.
-     * kptInterval    — reference to setInterval for the KPT countdown.
-     * kptRunning     — true while timer is ticking.
-     * kptPaused      — true when paused (distinct from "not started yet").
-     */
-    let kptActiveSecs = 300;   // default: Roasted Chicken base
+    let kptActiveSecs = 300;
     let kptTotalSecs  = 300;
     let kptRemaining  = 300;
     let kptInterval   = null;
     let kptRunning    = false;
     let kptPaused     = false;
+    let kptQueueCount = 0;    // number of orders marked ready
 
-    /**
-     * kptSecsToDisplay(secs)
-     * Converts a raw seconds number into "MM:SS" string.
-     */
     function kptSecsToDisplay(secs) {
       const s = Math.max(0, Math.round(secs));
-      const m = Math.floor(s / 60);
-      const r = s % 60;
-      return String(m).padStart(2, '0') + ':' + String(r).padStart(2, '0');
+      return String(Math.floor(s / 60)).padStart(2,'0') + ':' + String(s % 60).padStart(2,'0');
     }
 
-    /**
-     * kptSliderUpdate()
-     * Syncs the load percentage label to the slider thumb position.
-     */
+    /** Sync the load slider label AND the stat card */
     function kptSliderUpdate() {
       const val = document.getElementById('kpt-load-slider').value;
-      document.getElementById('kpt-load-val').textContent = val + '%';
+      document.getElementById('kpt-load-val').textContent      = val + '%';
+      document.getElementById('chef-load-display').textContent = val;
     }
 
     /**
      * kptCalculate()
-     * Core KPT formula:
-     *   1. Get base time for selected dish
-     *   2. Apply -20% if last dish matches (equipment already warm)
-     *   3. Apply +25% if load > 70% (kitchen overloaded)
-     *   4. Apply +30% if peak hours toggle is ON
-     *
-     * Updates the predicted display, formula breakdown,
-     * chef override preview, and syncs timer if NOT running.
+     * Core formula:
+     *   KPT = base × matchFactor × loadFactor × peakFactor
+     * Updates predicted display, formula breakdown, chef preview,
+     * avg-prep stat card, and syncs timer if not yet started.
      */
     function kptCalculate() {
       const dish     = document.getElementById('kpt-dish').value;
@@ -1538,42 +1265,29 @@
       const load     = parseInt(document.getElementById('kpt-load-slider').value, 10);
       const isPeak   = document.getElementById('kpt-peak-toggle').checked;
 
-      // Update peak toggle label
       document.getElementById('kpt-peak-state').textContent = isPeak ? 'ON' : 'OFF';
 
-      // Step 1: base time
-      let base = KPT_BASE_TIMES[dish];
+      const base        = KPT_BASE_TIMES[dish];
+      const isMatch     = (lastDish !== 'none' && lastDish === dish);
+      const matchFactor = isMatch  ? 0.80 : 1.00;  // -20% if same dish (equipment warm)
+      const loadFactor  = load > 70 ? 1.25 : 1.00;  // +25% if overloaded
+      const peakFactor  = isPeak   ? 1.30 : 1.00;  // +30% during peak
 
-      // Step 2: match discount (same dish was just made → equipment warm)
-      const isMatch = (lastDish !== 'none' && lastDish === dish);
-      const matchFactor = isMatch ? 0.80 : 1.00;  // 0.80 = reduce by 20%
-
-      // Step 3: load factor
-      const loadFactor = load > 70 ? 1.25 : 1.00;  // 1.25 = add 25%
-
-      // Step 4: peak factor
-      const peakFactor = isPeak ? 1.30 : 1.00;     // 1.30 = add 30%
-
-      // Final KPT in seconds
       const kptSecs = Math.round(base * matchFactor * loadFactor * peakFactor);
-
-      // Update predicted display (Section A)
       const display = kptSecsToDisplay(kptSecs);
-      document.getElementById('kpt-predicted-display').textContent = display;
 
-      // Update formula breakdown text
+      document.getElementById('kpt-predicted-display').textContent = display;
       document.getElementById('kpt-formula-detail').innerHTML =
         `Base: ${base}s` +
-        (isMatch  ? ` × 0.80 (match−20%)` : ` × 1.00`) +
-        (load > 70 ? ` × 1.25 (load+25%)` : ` × 1.00`) +
-        (isPeak   ? ` × 1.30 (peak+30%)` : ` × 1.00`) +
-        ` = <strong style="color:#00b4d8">${kptSecs}s</strong>`;
+        (isMatch   ? ` × 0.80 (match−20%)` : ` × 1.00`) +
+        (load > 70 ? ` × 1.25 (load+25%)`  : ` × 1.00`) +
+        (isPeak    ? ` × 1.30 (peak+30%)`  : ` × 1.00`) +
+        ` = <strong style="color:#ff9052">${kptSecs}s</strong>`;
 
-      // Update chef preview in Section B
       document.getElementById('kpt-chef-predicted-val').textContent = display;
+      document.getElementById('chef-avg-display').textContent       = display;
 
-      // Update active KPT if timer has NOT been started yet
-      // (once started, only chef save or reset changes the timer)
+      // Only sync timer if it hasn't been started yet
       if (!kptRunning && !kptPaused) {
         kptActiveSecs = kptSecs;
         kptTotalSecs  = kptSecs;
@@ -1582,17 +1296,12 @@
       }
     }
 
-    /**
-     * kptUpdateTimerDisplay()
-     * Writes current kptRemaining to the big timer clock and updates
-     * the drain bar. Called every second while running + on reset.
-     */
     function kptUpdateTimerDisplay() {
       const displayEl = document.getElementById('kpt-big-timer');
       const barEl     = document.getElementById('kpt-timer-bar');
 
       if (kptRemaining <= 0) {
-        // Timer finished: show 00:00 and "ORDER READY" message
+        // Done: show green "ORDER READY"
         displayEl.textContent = '00:00';
         displayEl.className   = 'kpt-big-timer kpt-done';
         barEl.style.width     = '0%';
@@ -1601,46 +1310,29 @@
         document.getElementById('kpt-timer-status').className   = 'kpt-timer-status ready';
         document.getElementById('kpt-start-btn').textContent    = '▶ START PREPARATION';
         document.getElementById('kpt-start-btn').disabled       = false;
-        kptRunning = false;
-        kptPaused  = false;
+        kptRunning = false; kptPaused = false;
         clearInterval(kptInterval);
       } else {
         displayEl.textContent = kptSecsToDisplay(kptRemaining);
-
-        // Colour: red (urgent) when under 60 seconds
-        const isUrgent = kptRemaining <= 60;
-        displayEl.className = 'kpt-big-timer' + (isUrgent ? ' kpt-urgent' : '');
-
-        // Drain bar percentage
-        const pct = kptTotalSecs > 0 ? (kptRemaining / kptTotalSecs) * 100 : 100;
-        barEl.style.width = pct + '%';
-        barEl.className   = 'kpt-timer-bar' + (isUrgent ? ' kpt-urgent' : '');
+        const isUrgent        = kptRemaining <= 60;
+        displayEl.className   = 'kpt-big-timer' + (isUrgent ? ' kpt-urgent' : '');
+        const pct             = kptTotalSecs > 0 ? (kptRemaining / kptTotalSecs) * 100 : 100;
+        barEl.style.width     = pct + '%';
+        barEl.className       = 'kpt-timer-bar' + (isUrgent ? ' kpt-urgent' : '');
       }
     }
 
-    /**
-     * kptTimerStart()
-     * Starts (or resumes from pause) the KPT countdown.
-     * Disables the START button while running.
-     */
     function kptTimerStart() {
-      if (kptRunning) return;  // prevent double-start
-
-      // If starting fresh (not resuming from pause), sync from active KPT
+      if (kptRunning) return;
       if (!kptPaused) {
         kptRemaining = kptActiveSecs;
         kptTotalSecs = kptActiveSecs;
       }
-
-      kptRunning = true;
-      kptPaused  = false;
-
+      kptRunning = true; kptPaused = false;
       document.getElementById('kpt-start-btn').disabled    = true;
       document.getElementById('kpt-start-btn').textContent = '▶ Running...';
       document.getElementById('kpt-timer-status').textContent = '⏱ Preparation in progress...';
       document.getElementById('kpt-timer-status').className   = 'kpt-timer-status';
-
-      // Tick every second
       kptInterval = setInterval(() => {
         if (!kptRunning) { clearInterval(kptInterval); return; }
         kptRemaining--;
@@ -1648,140 +1340,90 @@
       }, 1000);
     }
 
-    /**
-     * kptTimerPause()
-     * Pauses the running countdown. "Resume" re-uses kptTimerStart().
-     */
     function kptTimerPause() {
       if (!kptRunning) return;
-      kptRunning = false;
-      kptPaused  = true;
+      kptRunning = false; kptPaused = true;
       clearInterval(kptInterval);
       document.getElementById('kpt-start-btn').disabled    = false;
       document.getElementById('kpt-start-btn').textContent = '▶ Resume';
       document.getElementById('kpt-timer-status').textContent = '⏸ Paused';
     }
 
-    /**
-     * kptTimerReset()
-     * Resets the timer back to the current active KPT (predicted or chef's).
-     * Also re-enables the START button.
-     */
     function kptTimerReset() {
-      kptRunning = false;
-      kptPaused  = false;
+      kptRunning = false; kptPaused = false;
       clearInterval(kptInterval);
-
       kptRemaining = kptActiveSecs;
       kptTotalSecs = kptActiveSecs;
-
-      document.getElementById('kpt-big-timer').className   = 'kpt-big-timer';
-      document.getElementById('kpt-start-btn').disabled    = false;
-      document.getElementById('kpt-start-btn').textContent = '▶ START PREPARATION';
+      document.getElementById('kpt-big-timer').className      = 'kpt-big-timer';
+      document.getElementById('kpt-start-btn').disabled       = false;
+      document.getElementById('kpt-start-btn').textContent    = '▶ START PREPARATION';
       document.getElementById('kpt-timer-status').textContent = 'Press START to begin';
       document.getElementById('kpt-timer-status').className   = 'kpt-timer-status';
       document.getElementById('kpt-timer-bar').className      = 'kpt-timer-bar';
-
       kptUpdateTimerDisplay();
     }
 
-    /**
-     * kptFormatInput(el)
-     * Auto-inserts the colon after 2 digits so the chef doesn't need to
-     * type it — "0730" becomes "07:30" automatically.
-     */
+    /** Adds a new "READY" item to the pickup queue and increments pending counter */
+    function kptMarkReady() {
+      kptQueueCount++;
+      document.getElementById('chef-pending-display').textContent = kptQueueCount;
+      const queue = document.getElementById('kpt-queue');
+      const empty = queue.querySelector('.kpt-queue-empty');
+      if (empty) empty.remove();
+
+      const dish     = document.getElementById('kpt-dish');
+      const dishName = dish.options[dish.selectedIndex].text.split(' ').slice(0,2).join(' ');
+      const now      = new Date().toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' });
+
+      const item = document.createElement('div');
+      item.className = 'kpt-queue-item';
+      item.innerHTML =
+        `<span>Order #${kptQueueCount} — ${dishName} · ${now}</span>` +
+        `<span class="qi-ready">READY</span>`;
+      queue.insertBefore(item, queue.firstChild);
+    }
+
+    /** Auto-insert colon after 2 digits for MM:SS input */
     function kptFormatInput(el) {
-      let v = el.value.replace(/[^0-9]/g, '');  // strip non-digits
-      if (v.length > 2) {
-        v = v.substring(0, 2) + ':' + v.substring(2, 4);
-      }
+      let v = el.value.replace(/[^0-9]/g, '');
+      if (v.length > 2) v = v.substring(0,2) + ':' + v.substring(2,4);
       el.value = v;
     }
 
-    /**
-     * kptChefUpdate()
-     * "UPDATE" button — previews the chef's typed value in the
-     * confirmation message box without saving to timer yet.
-     */
-    function kptChefUpdate() {
-      const raw = document.getElementById('kpt-chef-input').value.trim();
-      const secs = kptParseMMSS(raw);
-      if (secs === null) {
-        alert('Please enter time in MM:SS format, e.g. 07:30');
-        return;
-      }
-      // Show the preview message
-      document.getElementById('kpt-chef-saved-val').textContent = kptSecsToDisplay(secs);
-      document.getElementById('kpt-chef-msg').style.display = 'block';
-      document.getElementById('kpt-chef-msg').style.color = '#ffd93d';
-      document.getElementById('kpt-chef-msg').innerHTML =
-        `⚠️ Preview: KPT will be set to <strong>${kptSecsToDisplay(secs)}</strong> — press 💾 Save to confirm`;
-    }
-
-    /**
-     * kptChefCancel()
-     * "CANCEL" button — clears the input and hides any message.
-     */
-    function kptChefCancel() {
-      document.getElementById('kpt-chef-input').value = '';
-      document.getElementById('kpt-chef-msg').style.display = 'none';
-    }
-
-    /**
-     * kptChefSave()
-     * "SAVE" button — commits the chef override:
-     *  1. Parses MM:SS input
-     *  2. Updates kptActiveSecs (the master KPT value)
-     *  3. Resets the countdown timer to the new value
-     *  4. Shows confirmation message
-     */
-    function kptChefSave() {
-      const raw  = document.getElementById('kpt-chef-input').value.trim();
-      const secs = kptParseMMSS(raw);
-      if (secs === null) {
-        alert('Please enter time in MM:SS format, e.g. 07:30');
-        return;
-      }
-
-      // Commit to active KPT
-      kptActiveSecs = secs;
-
-      // Reset the countdown to reflect the chef override
-      kptTimerReset();
-
-      // Show green confirmation message
-      const msgEl = document.getElementById('kpt-chef-msg');
-      msgEl.style.display = 'block';
-      msgEl.style.color   = '#6bcb77';
-      document.getElementById('kpt-chef-saved-val').textContent = kptSecsToDisplay(secs);
-      msgEl.innerHTML =
-        `✅ KPT manually updated by chef to <strong id="kpt-chef-saved-val">${kptSecsToDisplay(secs)}</strong>`;
-
-      // Clear input
-      document.getElementById('kpt-chef-input').value = '';
-    }
-
-    /**
-     * kptParseMMSS(str)
-     * Parses a "MM:SS" string into total seconds.
-     * Returns null if the format is invalid.
-     */
     function kptParseMMSS(str) {
       const parts = str.split(':');
       if (parts.length !== 2) return null;
-      const m = parseInt(parts[0], 10);
-      const s = parseInt(parts[1], 10);
+      const m = parseInt(parts[0],10);
+      const s = parseInt(parts[1],10);
       if (isNaN(m) || isNaN(s) || s < 0 || s > 59 || m < 0) return null;
       return m * 60 + s;
     }
 
+    /** Save chef's override: commits to kptActiveSecs and resets timer */
+    function kptChefSave() {
+      const raw  = document.getElementById('kpt-chef-input').value.trim();
+      const secs = kptParseMMSS(raw);
+      if (secs === null) { alert('Please enter time in MM:SS format, e.g. 07:30'); return; }
 
-    // ============================================================
-    // BOOT — Run once when page loads
-    // ============================================================
-    render();          // Feature 1: draw outlet cards
-    startTimer();      // Feature 2: begin delivery countdown
-    kptCalculate();    // Feature 3: run initial KPT calculation & display
+      kptActiveSecs = secs;
+      kptTimerReset();   // reset timer to new value
+
+      const msgEl = document.getElementById('kpt-chef-msg');
+      msgEl.style.display = 'block';
+      msgEl.style.color   = '#6bcb77';
+      document.getElementById('kpt-chef-saved-val').textContent    = kptSecsToDisplay(secs);
+      document.getElementById('chef-avg-display').textContent       = kptSecsToDisplay(secs);
+      msgEl.innerHTML = `✅ Override saved: <strong>${kptSecsToDisplay(secs)}</strong>`;
+      document.getElementById('kpt-chef-input').value = '';
+    }
+
+    function kptChefCancel() {
+      document.getElementById('kpt-chef-input').value    = '';
+      document.getElementById('kpt-chef-msg').style.display = 'none';
+    }
+
+    // No boot code needed — all views are hidden by default.
+    // activateDashboard() initialises the relevant feature on login.
 
   </script>
 
